@@ -1,0 +1,1799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoX Dynamics — Setup Visualizer</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0d0f14;--sf:#161a22;--sf2:#1e2330;--bd:#2a2f3e;--ac:#00d4ff;--ac2:#ff6b35;--green:#00ff88;--yellow:#ffd700;--red:#ff4444;--tx:#e8eaf0;--dim:#7a8099;--r:10px;--font:'Segoe UI',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:var(--font);min-height:100vh;overflow-x:hidden}
+/* HEADER */
+header{background:var(--sf);border-bottom:1px solid var(--bd);padding:10px 20px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:200;flex-wrap:wrap}
+.logo{font-size:17px;font-weight:700;color:var(--ac);letter-spacing:-.5px}.logo span{color:var(--dim);font-weight:400}
+.mode-toggle{display:flex;background:var(--bg);border-radius:8px;padding:3px;border:1px solid var(--bd);margin-left:auto}
+.mode-btn{padding:5px 14px;border:none;border-radius:6px;background:transparent;color:var(--dim);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.mode-btn.active{background:var(--ac2);color:#fff}
+#modeAutox.active{background:var(--ac);color:#000}
+.ai-btn{background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;color:#fff;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+/* CAR BAR */
+.car-bar{background:var(--sf);border-bottom:1px solid var(--bd);display:flex;overflow-x:auto;padding:0 20px}
+.car-tab{padding:9px 14px;border:none;background:transparent;color:var(--dim);font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s}
+.car-tab:hover{color:var(--tx)}.car-tab.active{color:var(--ac);border-bottom-color:var(--ac)}
+.car-tab .cs{display:block;font-size:9px;color:var(--dim);font-weight:400;margin-top:1px}
+/* INFO BAR */
+.info-bar{background:var(--sf2);border-bottom:1px solid var(--bd);padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.car-name{font-size:15px;font-weight:700}
+.badge{background:rgba(255,107,53,.15);border:1px solid rgba(255,107,53,.4);color:var(--ac2);font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.5px}
+.car-spec-txt{font-size:11px;color:var(--dim);margin-left:auto}
+/* TAB NAV */
+.tab-nav{background:var(--sf);border-bottom:1px solid var(--bd);display:flex;padding:0 20px;gap:0}
+.tab-nav-btn{padding:10px 18px;border:none;background:transparent;color:var(--dim);font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;letter-spacing:.2px}
+.tab-nav-btn:hover{color:var(--tx)}.tab-nav-btn.active{color:var(--ac);border-bottom-color:var(--ac)}
+/* MAIN */
+.main{display:grid;grid-template-columns:1fr 390px;min-height:calc(100vh - 140px)}
+.left-panel{padding:18px 20px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;max-height:calc(100vh - 140px)}
+.right-panel{border-left:1px solid var(--bd);background:var(--sf);overflow-y:auto;max-height:calc(100vh - 140px)}
+/* CARDS */
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:14px}
+.card-title{font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+/* SECTION */
+.p-sec{border-bottom:1px solid var(--bd);padding:13px 16px}.p-sec:last-child{border-bottom:none}
+.p-sec-title{font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:11px}
+/* SLIDER ROW */
+.sl-row{margin-bottom:13px}
+.sl-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.sl-name{font-size:12px;font-weight:600;color:var(--tx);display:flex;align-items:center;gap:4px}
+.sl-val{font-size:12px;font-weight:700;color:var(--ac);min-width:60px;text-align:right}
+.sl-ticks{display:flex;justify-content:space-between;font-size:9px;color:var(--dim);margin-top:2px}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--bg);border-radius:4px;outline:none;cursor:pointer}
+input[type=range]:disabled{opacity:.35;cursor:not-allowed}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;background:var(--ac);border-radius:50%;cursor:pointer;box-shadow:0 0 5px rgba(0,212,255,.4);transition:transform .1s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.25)}
+input[type=range]:disabled::-webkit-slider-thumb{background:var(--dim)}
+.stock-marker{font-size:9px;color:var(--dim);margin-top:1px}
+/* TOGGLE */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.toggle-label{font-size:12px;font-weight:600;color:var(--tx)}
+.toggle{position:relative;width:38px;height:20px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--bd);border-radius:20px;transition:.2s}
+.toggle-slider:before{position:absolute;content:"";height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle input:checked+.toggle-slider{background:var(--ac)}
+.toggle input:checked+.toggle-slider:before{transform:translateX(18px)}
+.no-bar-note{font-size:10px;color:var(--red);margin-bottom:8px;font-style:italic}
+/* SELECT */
+select{background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:5px 8px;font-size:12px;width:100%;cursor:pointer;margin-bottom:8px}
+select:focus{outline:none;border-color:var(--ac)}
+/* INFO ICON + TOOLTIP */
+.ii{width:13px;height:13px;background:var(--sf2);border-radius:50%;text-align:center;line-height:13px;font-size:8px;cursor:help;color:var(--dim);border:1px solid var(--bd);position:relative;flex-shrink:0}
+.tt{display:none;position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:#1a1e2a;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-size:11px;color:var(--dim);line-height:1.5;white-space:normal;width:200px;z-index:300;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+.ii:hover .tt{display:block}
+/* RADIO OPTS */
+.radio-grp{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+.ropt{flex:1;min-width:70px;background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:5px 6px;font-size:11px;font-weight:600;color:var(--dim);cursor:pointer;text-align:center;transition:all .2s}
+.ropt:hover{color:var(--tx)}.ropt.sel{background:rgba(0,212,255,.1);border-color:var(--ac);color:var(--ac)}
+/* COMPARISON GRID */
+.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cmp-card{background:var(--bg);border-radius:8px;padding:9px 11px;border:1px solid var(--bd)}
+.cmp-name{font-size:10px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.bar-wrap{background:var(--sf2);border-radius:4px;height:5px;position:relative;margin-bottom:3px}
+.bar-base{position:absolute;left:0;top:0;height:100%;background:rgba(0,212,255,.3);border-radius:4px;transition:width .4s}
+.bar-mod{position:absolute;left:0;top:0;height:100%;background:var(--ac);border-radius:4px;transition:width .4s}
+.bar-mod.up{background:var(--green)}.bar-mod.dn{background:var(--red)}
+.cmp-val{font-size:11px;font-weight:700}
+.d-pos{color:var(--green)}.d-neg{color:var(--red)}.d-neu{color:var(--dim)}
+/* PRESETS */
+.presets{display:flex;gap:8px}
+.preset-btn{flex:1;background:var(--sf);border:1px solid var(--bd);color:var(--dim);padding:9px 6px;border-radius:8px;font-size:10px;font-weight:600;cursor:pointer;text-align:center;transition:all .2s}
+.preset-btn:hover{border-color:var(--ac);color:var(--tx)}
+.preset-btn .pi{font-size:16px;display:block;margin-bottom:3px}
+/* SCCA */
+.scca-box{background:linear-gradient(135deg,rgba(0,212,255,.07),rgba(0,212,255,.02));border:1px solid rgba(0,212,255,.25);border-radius:8px;padding:9px 12px}
+.scca-title{font-weight:700;color:var(--ac);margin-bottom:3px;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.scca-txt{color:var(--dim);font-size:11px;line-height:1.6}
+/* EFFECT FEED */
+.feed{background:var(--bg);border-radius:8px;padding:9px 12px;font-size:11px;line-height:1.7;min-height:50px;color:var(--dim);border:1px solid var(--bd);max-height:100px;overflow-y:auto}
+.ep{color:var(--green)}.en{color:var(--red)}.ew{color:var(--yellow)}
+/* COMPOUND CARDS */
+.compound-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.comp-opt{background:var(--bg);border:1px solid var(--bd);border-radius:7px;padding:8px 9px;cursor:pointer;transition:all .2s}
+.comp-opt:hover{border-color:var(--dim)}.comp-opt.sel{border-color:var(--ac);background:rgba(0,212,255,.06)}
+.comp-name{font-size:11px;font-weight:700;color:var(--tx);margin-bottom:2px}
+.comp-tw{font-size:9px;color:var(--ac2);font-weight:600}
+.comp-grip{font-size:9px;color:var(--dim);margin-top:2px}
+/* RESET BTN */
+.reset-btn{background:var(--sf2);border:1px solid var(--bd);color:var(--dim);padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer;transition:all .2s}
+.reset-btn:hover{color:var(--tx);border-color:var(--ac)}
+/* AI PANEL */
+#ai-panel{position:fixed;right:-420px;top:0;width:400px;height:100vh;background:var(--sf);border-left:1px solid var(--bd);z-index:500;transition:right .3s;display:flex;flex-direction:column}
+#ai-panel.open{right:0}
+.ai-header{padding:14px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.ai-title{font-size:14px;font-weight:700;color:#a78bfa}
+.ai-close{background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer}
+.ai-history{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.ai-msg{padding:9px 11px;border-radius:8px;font-size:12px;line-height:1.6;max-width:90%}
+.ai-user{background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.3);color:var(--tx);align-self:flex-end}
+.ai-bot{background:var(--bg);border:1px solid var(--bd);color:var(--tx);align-self:flex-start}
+.ai-input-row{padding:12px 16px;border-top:1px solid var(--bd);display:flex;gap:8px}
+.ai-input{flex:1;background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;color:var(--tx);font-size:12px;resize:none;height:60px}
+.ai-input:focus{outline:none;border-color:#7c3aed}
+.ai-send{background:#7c3aed;border:none;color:#fff;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;align-self:flex-end}
+/* ENGINE MOD CARDS */
+.mod-card{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:9px 11px;margin-bottom:7px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;transition:all .2s}
+.mod-card.active{border-color:var(--green);background:rgba(0,255,136,.04)}
+.mod-card .mc-check{width:16px;height:16px;border:2px solid var(--bd);border-radius:4px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:10px}
+.mod-card.active .mc-check{border-color:var(--green);color:var(--green)}
+.mod-card .mc-body{flex:1}
+.mod-card .mc-name{font-size:12px;font-weight:700;color:var(--tx);margin-bottom:2px}
+.mod-card .mc-desc{font-size:10px;color:var(--dim);line-height:1.5}
+.mod-card .mc-gain{font-size:10px;color:var(--green);font-weight:600;margin-top:2px}
+.mod-card .mc-legal{font-size:9px;color:var(--ac);background:rgba(0,212,255,.1);border-radius:4px;padding:1px 5px;display:inline-block;margin-top:2px}
+/* DYNO SUMMARY */
+.dyno-summary{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px}
+.ds-item .ds-label{color:var(--dim);font-size:10px;margin-bottom:2px}
+.ds-item .ds-val{font-weight:700;color:var(--tx)}.ds-item .ds-delta{color:var(--green);font-size:10px}
+/* FITMENT BADGE */
+.fit-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.3px}
+.fit-ideal{background:rgba(0,255,136,.15);color:var(--green);border:1px solid rgba(0,255,136,.3)}
+.fit-ok{background:rgba(255,215,0,.12);color:var(--yellow);border:1px solid rgba(255,215,0,.3)}
+.fit-wide{background:rgba(255,107,53,.12);color:var(--ac2);border:1px solid rgba(255,107,53,.3)}
+.fit-stretch{background:rgba(255,68,68,.15);color:var(--red);border:1px solid rgba(255,68,68,.3)}
+/* WET TOGGLE */
+.wet-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:8px 12px;background:rgba(0,212,255,.05);border-radius:8px;border:1px solid rgba(0,212,255,.15)}
+.wet-label{font-size:12px;font-weight:600;color:var(--tx);flex:1}
+/* CLICK DISPLAY */
+.click-disp{font-size:10px;color:var(--ac2);margin-top:2px;font-weight:600}
+/* HIDDEN */
+.hidden{display:none!important}
+/* CHART AREA */
+canvas{display:block;width:100%!important}
+.chart-wrap{position:relative;width:100%}
+/* WHEEL CANVAS */
+#wheelCanvas{background:var(--bg);border-radius:8px;display:block;margin:0 auto}
+.wheel-info{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.wi-item{background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;text-align:center}
+.wi-label{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px}
+.wi-val{font-size:12px;font-weight:700;color:var(--tx);margin-top:1px}
+/* RPM RANGE BARS */
+.rpm-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.rpm-range-label{font-size:11px;color:var(--dim);width:90px;flex-shrink:0}
+.rpm-gain-bar-wrap{flex:1;background:var(--sf2);border-radius:4px;height:18px;position:relative;overflow:hidden}
+.rpm-gain-bar{height:100%;border-radius:4px;transition:width .4s;display:flex;align-items:center;padding-left:6px;font-size:10px;font-weight:700;color:#000}
+@media(max-width:900px){.main{grid-template-columns:1fr}.right-panel{max-height:none;border-left:none;border-top:1px solid var(--bd)}.cmp-grid{grid-template-columns:1fr}.left-panel{max-height:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">AutoX<span>Dynamics</span></div>
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="modeAutox" onclick="setMode('autocross')">⬡ Autocross</button>
+    <button class="mode-btn" id="modeTrack" onclick="setMode('track')">◈ Track</button>
+  </div>
+  <button class="ai-btn" onclick="toggleAI()">🤖 AI Feedback</button>
+</header>
+
+<div class="car-bar" id="carBar"></div>
+
+<div class="info-bar">
+  <div class="car-name" id="carName">—</div>
+  <div class="badge" id="carClass">—</div>
+  <div class="car-spec-txt" id="carSpec">—</div>
+</div>
+
+<div class="tab-nav">
+  <button class="tab-nav-btn active" onclick="switchTab('suspension')">① Suspension</button>
+  <button class="tab-nav-btn" onclick="switchTab('tire')">② Wheel &amp; Tire</button>
+  <button class="tab-nav-btn" onclick="switchTab('engine')">③ Engine</button>
+</div>
+
+<div class="main">
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+
+    <!-- SUSPENSION CHARTS -->
+    <div id="lp-suspension">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="card-title" style="margin-bottom:0">Handling Profile</div>
+          <div style="display:flex;gap:12px;font-size:10px">
+            <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:rgba(0,212,255,.5);margin-right:4px;vertical-align:middle"></span>Baseline</span>
+            <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#00ff88;margin-right:4px;vertical-align:middle"></span>Modified</span>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:310px"><canvas id="radarChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="card-title" style="margin-bottom:0">Before → After</div>
+          <button class="reset-btn" onclick="resetSusp()">↺ Reset</button>
+        </div>
+        <div class="cmp-grid" id="suspCmpGrid"></div>
+      </div>
+      <div class="presets">
+        <button class="preset-btn" onclick="applyPreset('neutral')"><span class="pi">⚖</span>Neutral</button>
+        <button class="preset-btn" onclick="applyPreset('oversteer')"><span class="pi">🔥</span>Oversteer</button>
+        <button class="preset-btn" onclick="applyPreset('understeer')"><span class="pi">🛡</span>Understeer</button>
+      </div>
+      <div class="scca-box"><div class="scca-title">⚑ SCCA Compliance</div><div class="scca-txt" id="sccaTxt">—</div></div>
+      <div class="card"><div class="card-title">Live Effect Feed</div><div class="feed" id="effectFeed">Adjust sliders to see real-time handling effects...</div></div>
+    </div>
+
+    <!-- TIRE CHARTS -->
+    <div id="lp-tire" class="hidden">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="card-title" style="margin-bottom:0">Tire Performance Profile</div>
+          <div style="display:flex;gap:12px;font-size:10px">
+            <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:rgba(0,212,255,.5);margin-right:4px;vertical-align:middle"></span>Stock</span>
+            <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#00ff88;margin-right:4px;vertical-align:middle"></span>Selected</span>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:280px"><canvas id="tireRadarChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Wheel/Tire Cross-Section</div>
+        <canvas id="wheelCanvas" width="340" height="220"></canvas>
+        <div style="text-align:center;margin:6px 0"><span id="fitBadge" class="fit-badge fit-ideal">IDEAL FIT</span></div>
+        <div class="wheel-info" id="wheelInfo"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Fitment Impact vs Stock</div>
+        <div class="chart-wrap" style="height:180px"><canvas id="fitmentChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ENGINE CHARTS -->
+    <div id="lp-engine" class="hidden">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="card-title" style="margin-bottom:0">Dyno Graph</div>
+          <div style="display:flex;gap:10px;font-size:10px">
+            <span><span style="border-bottom:2px solid rgba(0,212,255,.6);display:inline-block;width:20px;margin-right:4px;vertical-align:middle"></span>Stock HP</span>
+            <span><span style="border-bottom:2px dashed var(--green);display:inline-block;width:20px;margin-right:4px;vertical-align:middle"></span>Mod HP</span>
+            <span><span style="border-bottom:2px solid rgba(255,107,53,.6);display:inline-block;width:20px;margin-right:4px;vertical-align:middle"></span>Stock TQ</span>
+            <span><span style="border-bottom:2px dashed var(--yellow);display:inline-block;width:20px;margin-right:4px;vertical-align:middle"></span>Mod TQ</span>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:280px"><canvas id="dynoChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">HP Gain by RPM Range</div>
+        <div id="rpmGainBars"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Modification Summary</div>
+        <div class="dyno-summary" id="dynSummary"></div>
+      </div>
+    </div>
+
+  </div><!-- /left-panel -->
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+
+    <!-- TAB 1: SUSPENSION -->
+    <div id="rp-suspension">
+      <div class="p-sec">
+        <div class="p-sec-title">Suspension Setup</div>
+        <div class="sl-row">
+          <div class="sl-label"><span class="sl-name">Coilover / Shock Setup</span></div>
+          <select id="suspSetup" onchange="onSuspSetup()">
+            <option value="stock">OEM Stock</option>
+            <option value="neomax">Silvers Neomax (24 clicks)</option>
+            <option value="kw_v3">KW V3 (16 clicks)</option>
+            <option value="bc_br">BC Racing BR (30 clicks)</option>
+            <option value="ohlins">Öhlins R&amp;T (22 clicks)</option>
+            <option value="tein">Tein Flex A (16 clicks)</option>
+            <option value="custom">Custom (enter clicks)</option>
+          </select>
+          <div id="customClicksRow" class="hidden" style="display:flex;gap:8px;margin-bottom:8px">
+            <div style="flex:1"><label style="font-size:10px;color:var(--dim)">Front Clicks</label><input type="number" id="customFClicks" value="20" min="1" max="60" style="width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:4px 8px;font-size:12px" onchange="onSuspSetup()"></div>
+            <div style="flex:1"><label style="font-size:10px;color:var(--dim)">Rear Clicks</label><input type="number" id="customRClicks" value="20" min="1" max="60" style="width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:4px 8px;font-size:12px" onchange="onSuspSetup()"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-sec">
+        <div class="p-sec-title">Spring Rates</div>
+        <div class="sl-row">
+          <div class="sl-label">
+            <span class="sl-name">Front Spring Rate<span class="ii">i<span class="tt">Stiffer front springs reduce dive and sharpen turn-in but can cause understeer on rough surfaces. Too stiff reduces front tire compliance over bumps.</span></span></span>
+            <span class="sl-val" id="val_fs">— kg/mm</span>
+          </div>
+          <input type="range" id="sl_fs" min="10" max="200" step="1" value="50" oninput="onSuspSlider()">
+          <div class="stock-marker" id="sm_fs">Stock: — kg/mm</div>
+        </div>
+        <div class="sl-row">
+          <div class="sl-label">
+            <span class="sl-name">Rear Spring Rate<span class="ii">i<span class="tt">Stiffer rear springs resist squat under acceleration. Can promote oversteer or rear instability over bumps mid-corner if too stiff.</span></span></span>
+            <span class="sl-val" id="val_rs">— kg/mm</span>
+          </div>
+          <input type="range" id="sl_rs" min="10" max="200" step="1" value="50" oninput="onSuspSlider()">
+          <div class="stock-marker" id="sm_rs">Stock: — kg/mm</div>
+        </div>
+      </div>
+
+      <div class="p-sec">
+        <div class="p-sec-title">Damping</div>
+        <div class="sl-row">
+          <div class="sl-label">
+            <span class="sl-name">Compression Damping<span class="ii">i<span class="tt">Controls how fast the suspension compresses under load. More compression = sharper transient response. Too firm = harshness and reduced grip on bumps.</span></span></span>
+            <span class="sl-val" id="val_cd">—</span>
+          </div>
+          <input type="range" id="sl_cd" min="1" max="24" step="1" value="12" oninput="onDampSlider()">
+          <div class="click-disp" id="disp_cd">—</div>
+        </div>
+        <div class="sl-row">
+          <div class="sl-label">
+            <span class="sl-name">Rebound Damping<span class="ii">i<span class="tt">Controls how fast the suspension extends. More rebound = tire stays planted after compression. Too much = tire hop on successive bumps.</span></span></span>
+            <span class="sl-val" id="val_rd">—</span>
+          </div>
+          <input type="range" id="sl_rd" min="1" max="24" step="1" value="12" oninput="onDampSlider()">
+          <div class="click-disp" id="disp_rd">—</div>
+        </div>
+      </div>
+
+      <div class="p-sec">
+        <div class="p-sec-title">Sway Bars (Anti-Roll)</div>
+        <div id="frontARB-section">
+          <div class="toggle-row">
+            <span class="toggle-label">Front Sway Bar</span>
+            <label class="toggle"><input type="checkbox" id="tog_farb" checked onchange="onARBToggle()"><span class="toggle-slider"></span></label>
+          </div>
+          <div id="farb-controls">
+            <div class="sl-row">
+              <div class="sl-label">
+                <span class="sl-name">Diameter<span class="ii">i<span class="tt">Larger diameter = exponentially stiffer. Stiffer front ARB → more load transfer to outside front → understeer on RWD, helps FWD rotation. Stock diameters vary by car.</span></span></span>
+                <span class="sl-val" id="val_farb">— mm</span>
+              </div>
+              <input type="range" id="sl_farb" min="17" max="32" step="1" value="20" oninput="onSuspSlider()">
+              <div class="stock-marker" id="sm_farb">Stock: — mm</div>
+            </div>
+            <div class="sl-row">
+              <div class="sl-label"><span class="sl-name">Adjustability</span></div>
+              <select id="sel_farb_adj" onchange="onSuspSlider()">
+                <option value="fixed">Fixed (Non-adjustable)</option>
+                <option value="2pos">2-Position Adjustable</option>
+                <option value="3pos">3-Position Adjustable</option>
+                <option value="blade">Blade / Infinite Adjust</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div id="rearARB-section" style="margin-top:8px">
+          <div id="no-rear-arb-note" class="no-bar-note hidden">⚠ No factory rear sway bar — aftermarket only</div>
+          <div class="toggle-row">
+            <span class="toggle-label">Rear Sway Bar</span>
+            <label class="toggle"><input type="checkbox" id="tog_rarb" checked onchange="onARBToggle()"><span class="toggle-slider"></span></label>
+          </div>
+          <div id="rarb-controls">
+            <div class="sl-row">
+              <div class="sl-label">
+                <span class="sl-name">Diameter<span class="ii">i<span class="tt">Stiffer rear ARB transfers load to outside rear tire → oversteer on RWD. On FWD, rear ARB stiffness REDUCES understeer by rotating the car. Use carefully on RWD.</span></span></span>
+                <span class="sl-val" id="val_rarb">— mm</span>
+              </div>
+              <input type="range" id="sl_rarb" min="12" max="28" step="1" value="16" oninput="onSuspSlider()">
+              <div class="stock-marker" id="sm_rarb">Stock: — mm</div>
+            </div>
+            <div class="sl-row">
+              <div class="sl-label"><span class="sl-name">Adjustability</span></div>
+              <select id="sel_rarb_adj" onchange="onSuspSlider()">
+                <option value="fixed">Fixed (Non-adjustable)</option>
+                <option value="2pos">2-Position Adjustable</option>
+                <option value="3pos">3-Position Adjustable</option>
+                <option value="blade">Blade / Infinite Adjust</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-sec">
+        <div class="p-sec-title">Alignment</div>
+        <div class="sl-row">
+          <div class="sl-label">
+            <span class="sl-name">Front Camber<span class="ii">i<span class="tt">Negative camber tilts tire top inward. More negative = better cornering contact patch. Too much = reduced braking, inner tire wear. Autocross typically -2.0° to -3.5°.</span></span></span>
+            <span class="sl-val" id="val_fca">0.0°</span>
+          </div>
+          <input type="range" id="sl_fca" min="-40" max="0" step="1" value="-15" oninput="onAlignSlider()">
+          <div class="sl-ticks"><span>0°</span><span>-2°</span><span>-4°</span></div>
+        </div>
+        <div class="sl-row">
+          <div class="sl-label">
+            <span class="sl-name">Rear Camber<span class="ii">i<span class="tt">Negative rear camber improves mid-corner stability and rear grip. More than -2.5° causes rapid inner tire wear. Check SCCA rules on alignment specs.</span></span></span>
+            <span class="sl-val" id="val_rca">0.0°</span>
+          </div>
+          <input type="range" id="sl_rca" min="-40" max="0" step="1" value="-10" oninput="onAlignSlider()">
+          <div class="sl-ticks"><span>0°</span><span>-2°</span><span>-4°</span></div>
+        </div>
+        <div class="sl-row">
+          <div class="sl-label">
+            <span class="sl-name">Front Toe<span class="ii">i<span class="tt">Toe-out = quicker turn-in, more agile, slight instability. Toe-in = stability, slower response. Autocross often uses 1/16"–1/8" toe-out front for sharper turn-in.</span></span></span>
+            <span class="sl-val" id="val_fte">Neutral</span>
+          </div>
+          <input type="range" id="sl_fte" min="-3" max="3" step="1" value="0" oninput="onAlignSlider()">
+          <div class="sl-ticks"><span>3/16 in</span><span>Neutral</span><span>3/16 out</span></div>
+        </div>
+        <div class="sl-row">
+          <div class="sl-label">
+            <span class="sl-name">Rear Toe<span class="ii">i<span class="tt">Rear toe-in = stability, composure at speed. Rear toe-out = more rotation but dangerous at high speed. Stock typically has slight toe-in rear for safety.</span></span></span>
+            <span class="sl-val" id="val_rte">Neutral</span>
+          </div>
+          <input type="range" id="sl_rte" min="-3" max="3" step="1" value="0" oninput="onAlignSlider()">
+          <div class="sl-ticks"><span>3/16 out</span><span>Neutral</span><span>3/16 in</span></div>
+        </div>
+      </div>
+    </div><!-- /rp-suspension -->
+
+    <!-- TAB 2: WHEEL & TIRE -->
+    <div id="rp-tire" class="hidden">
+      <div class="p-sec">
+        <div class="p-sec-title">Tire Size (Front)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:4px">
+          <div>
+            <div style="font-size:10px;color:var(--dim);margin-bottom:3px">Width (mm)</div>
+            <select id="fw" onchange="onTireChange()">
+              <option>165</option><option>175</option><option>185</option><option>195</option><option>205</option><option>215</option><option>225</option><option>235</option><option>245</option><option>255</option><option>265</option><option>275</option><option>285</option><option>295</option><option>305</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--dim);margin-bottom:3px">Aspect</div>
+            <select id="fa" onchange="onTireChange()">
+              <option>25</option><option>30</option><option>35</option><option>40</option><option>45</option><option>50</option><option>55</option><option>60</option><option>65</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--dim);margin-bottom:3px">Rim (in)</div>
+            <select id="fr" onchange="onTireChange()">
+              <option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option>
+            </select>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--dim)" id="ftireInfo">—</div>
+      </div>
+      <div class="p-sec">
+        <div class="p-sec-title">Tire Size (Rear)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:4px">
+          <div>
+            <div style="font-size:10px;color:var(--dim);margin-bottom:3px">Width (mm)</div>
+            <select id="rw" onchange="onTireChange()">
+              <option>165</option><option>175</option><option>185</option><option>195</option><option>205</option><option>215</option><option>225</option><option>235</option><option>245</option><option>255</option><option>265</option><option>275</option><option>285</option><option>295</option><option>305</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--dim);margin-bottom:3px">Aspect</div>
+            <select id="ra" onchange="onTireChange()">
+              <option>25</option><option>30</option><option>35</option><option>40</option><option>45</option><option>50</option><option>55</option><option>60</option><option>65</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--dim);margin-bottom:3px">Rim (in)</div>
+            <select id="rr" onchange="onTireChange()">
+              <option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option>
+            </select>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--dim)" id="rtireInfo">—</div>
+      </div>
+      <div class="p-sec">
+        <div class="p-sec-title">Rim Width</div>
+        <div class="sl-row">
+          <div class="sl-label"><span class="sl-name">Front Rim Width<span class="ii">i<span class="tt">Rim too narrow → sidewall bulges outward → reduced cornering stability. Rim too wide → tire stretches → reduced wet performance, sidewall damage risk.</span></span></span><span class="sl-val" id="val_frimw">7.0"</span></div>
+          <input type="range" id="sl_frimw" min="50" max="110" step="5" value="70" oninput="onRimChange()">
+          <div class="sl-ticks"><span>5.0"</span><span>8.0"</span><span>11.0"</span></div>
+        </div>
+        <div class="sl-row">
+          <div class="sl-label"><span class="sl-name">Rear Rim Width<span class="ii">i<span class="tt">Wider rim holds tire more upright during cornering = more contact patch. Too wide stretches tire = uneven wear, compromised wet grip.</span></span></span><span class="sl-val" id="val_rrimw">7.0"</span></div>
+          <input type="range" id="sl_rrimw" min="50" max="110" step="5" value="70" oninput="onRimChange()">
+          <div class="sl-ticks"><span>5.0"</span><span>8.0"</span><span>11.0"</span></div>
+        </div>
+        <div style="font-size:11px;color:var(--dim);margin-top:4px" id="rimFitNote">—</div>
+      </div>
+      <div class="p-sec">
+        <div class="p-sec-title">Tire Compound</div>
+        <div class="wet-row">
+          <span class="wet-label">💧 Wet Conditions Mode</span>
+          <label class="toggle"><input type="checkbox" id="tog_wet" onchange="onCompoundChange()"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="radio-grp" style="margin-bottom:10px">
+          <div class="ropt sel" id="cat_allseason" onclick="setCompoundCat('allseason')">All-Season</div>
+          <div class="ropt" id="cat_200tw" onclick="setCompoundCat('200tw')">200TW</div>
+          <div class="ropt" id="cat_summer" onclick="setCompoundCat('summer')">Summer UHP</div>
+        </div>
+        <div class="compound-grid" id="compoundGrid"></div>
+        <div id="compoundDetail" style="background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--dim);line-height:1.6"></div>
+      </div>
+    </div><!-- /rp-tire -->
+
+    <!-- TAB 3: ENGINE -->
+    <div id="rp-engine" class="hidden">
+      <div class="p-sec">
+        <div class="p-sec-title">Engine Modifications (SCCA ST Legal)</div>
+        <div style="font-size:10px;color:var(--dim);margin-bottom:10px;padding:6px 10px;background:rgba(0,212,255,.05);border-radius:6px;border:1px solid rgba(0,212,255,.15)">
+          Street Touring allows bolt-on engine modifications. Internal engine work, forced induction changes, and engine swaps are not permitted. Verify with current SCCA GCR for your sub-class.
+        </div>
+        <div id="engModList"></div>
+      </div>
+    </div><!-- /rp-engine -->
+
+  </div><!-- /right-panel -->
+</div><!-- /main -->
+
+<!-- AI PANEL -->
+<div id="ai-panel">
+  <div class="ai-header">
+    <div>
+      <div class="ai-title">🤖 AI Driving Coach</div>
+      <div style="font-size:10px;color:var(--dim);margin-top:2px">Describe what you feel — get setup recommendations</div>
+    </div>
+    <button class="ai-close" onclick="toggleAI()">✕</button>
+  </div>
+  <div class="ai-history" id="aiHistory">
+    <div class="ai-msg ai-bot">Describe what your car is doing on track or at autocross — I'll diagnose the handling issue and recommend specific setup changes. Example: <em>"The front pushes wide every time I try to apex"</em> or <em>"The rear steps out on corner exit"</em></div>
+  </div>
+  <div class="ai-input-row">
+    <textarea class="ai-input" id="aiInput" placeholder="e.g. 'the front pushes wide at corner exit...'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI()}"></textarea>
+    <button class="ai-send" onclick="sendAI()">Send</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  VEHICLE DATA
+// ═══════════════════════════════════════════════════════
+const SUSP_SETUPS = {
+  stock:  {name:'OEM Stock',     fc:0,  rc:0},
+  neomax: {name:'Silvers Neomax',fc:24, rc:24},
+  kw_v3:  {name:'KW V3',         fc:16, rc:16},
+  bc_br:  {name:'BC Racing BR',  fc:30, rc:30},
+  ohlins: {name:'Öhlins R&T',    fc:22, rc:22},
+  tein:   {name:'Tein Flex A',   fc:16, rc:16},
+  custom: {name:'Custom',        fc:20, rc:20}
+};
+
+const CARS = {
+  e82_128i:{
+    name:'2011 BMW 128i E82', short:'E82 128i', cls:'ST4/STF', layout:'rwd',
+    spec:'I6 230hp · RWD · Manual',
+    sccaClass:'ST4',
+    stockSpring:{f:2.5,r:2.0},
+    swaybars:{f:{present:true,dia:20,adj:'fixed'},r:{present:false,note:'No factory rear sway bar'}},
+    stockTire:{fw:205,fa:55,fr:16,frimW:6.5, rw:225,ra:50,rr:16,rrimW:7.0},
+    peakHP:230, peakTQ:200, peakHPrpm:6500, peakTQrpm:2750, maxRPM:7000,
+    // normalized HP/TQ at RPMs [1000..7000 step 500]
+    hpCurve:[.13,.20,.28,.37,.46,.54,.63,.71,.79,.87,.93,.99,1.0,.94],
+    tqCurve:[.52,.68,.80,.89,.95,.96,.95,.93,.90,.86,.80,.74,.68,.56],
+    baseAX:{us:6.5,ti:7.0,mc:7.5,et:6.0,br:5.5,rc:6.0,sf:8.5},
+    baseTR:{us:6.0,ti:7.5,mc:8.0,et:6.5,br:6.0,rc:5.5,sf:8.5},
+    sccaNotes:'ST4/STF eligible. Aftermarket coilovers allowed; OE geometry must be maintained. Wheel/tire width limits apply per sub-class (255mm front max in STF). RWD balance management critical — stiffer rear ARB on N52 can cause snap oversteer at high revs on exit.',
+    tendencies:'rwd_neutral'
+  },
+  brz_17:{
+    name:'2017 Subaru BRZ', short:'BRZ', cls:'STR', layout:'rwd',
+    spec:'FA20 205hp · RWD · 6-Speed',
+    sccaClass:'STR',
+    stockSpring:{f:2.8,r:2.5},
+    swaybars:{f:{present:true,dia:18,adj:'2pos'},r:{present:true,dia:16,adj:'2pos'}},
+    stockTire:{fw:215,fa:45,fr:17,frimW:7.0, rw:215,ra:45,rr:17,rrimW:7.0},
+    peakHP:205, peakTQ:156, peakHPrpm:7000, peakTQrpm:6400, maxRPM:7500,
+    hpCurve:[.10,.17,.25,.34,.41,.46,.52,.60,.70,.80,.89,.96,.99,1.0],
+    tqCurve:[.48,.62,.73,.80,.84,.80,.76,.78,.82,.88,.95,1.0,.97,.82],
+    baseAX:{us:5.5,ti:7.5,mc:7.0,et:5.0,br:5.0,rc:5.5,sf:7.5},
+    baseTR:{us:5.8,ti:7.8,mc:7.5,et:5.5,br:5.5,rc:5.0,sf:7.5},
+    sccaNotes:'STR class gold standard. FA20 torque dip 3500-4500 RPM is characteristic — headers help significantly. Open diff limits exit traction; aftermarket LSD allowed in STR. 200TW tires recommended. Stiffer rear ARB dramatically improves mid-corner rotation.',
+    tendencies:'rwd_us'
+  },
+  gr86_24:{
+    name:'2024 Toyota GR86', short:'GR86', cls:'STR', layout:'rwd',
+    spec:'FA24 228hp · RWD · 6-Speed',
+    sccaClass:'STR',
+    stockSpring:{f:3.2,r:2.8},
+    swaybars:{f:{present:true,dia:22,adj:'fixed'},r:{present:true,dia:16,adj:'2pos'}},
+    stockTire:{fw:215,fa:40,fr:18,frimW:7.5, rw:215,ra:40,rr:18,rrimW:7.5},
+    peakHP:228, peakTQ:184, peakHPrpm:7000, peakTQrpm:3700, maxRPM:7500,
+    hpCurve:[.11,.19,.28,.40,.52,.60,.67,.75,.83,.90,.96,.99,1.0,.89],
+    tqCurve:[.53,.68,.80,.91,.97,1.0,.98,.95,.91,.87,.82,.77,.72,.60],
+    baseAX:{us:6.5,ti:8.0,mc:7.5,et:5.5,br:6.0,rc:6.0,sf:8.0},
+    baseTR:{us:6.8,ti:8.5,mc:8.0,et:6.0,br:6.5,rc:5.5,sf:8.5},
+    sccaNotes:'STR class (confirmed). Significantly improved over gen 1 — FA24 eliminates the notorious torque dip. Electronic LSD from factory helps exit traction. Stock Michelin PS4 are competitive. Chassis stiffness improved 50% vs BRZ; responds well to spring rate increases.',
+    tendencies:'rwd_neutral'
+  },
+  mx5_nc:{
+    name:'2012 Mazda MX-5 NC2', short:'NC MX-5', cls:'STR/STS', layout:'rwd',
+    spec:'MZR 2.0 170hp · RWD · Hardtop',
+    sccaClass:'STR',
+    stockSpring:{f:2.5,r:2.2},
+    swaybars:{f:{present:true,dia:17,adj:'fixed'},r:{present:false,note:'No factory rear sway bar on hardtop — optional 14mm in some markets'}},
+    stockTire:{fw:195,fa:50,fr:16,frimW:6.5, rw:195,ra:50,rr:16,rrimW:6.5},
+    peakHP:170, peakTQ:140, peakHPrpm:7000, peakTQrpm:5000, maxRPM:7500,
+    hpCurve:[.11,.19,.29,.39,.49,.57,.65,.74,.83,.91,.96,.99,1.0,.89],
+    tqCurve:[.50,.63,.73,.80,.86,.90,.93,.96,1.0,.98,.93,.87,.80,.66],
+    baseAX:{us:5.5,ti:7.8,mc:7.0,et:5.5,br:5.0,rc:6.5,sf:8.0},
+    baseTR:{us:5.8,ti:8.0,mc:7.5,et:5.5,br:5.5,rc:6.0,sf:8.0},
+    sccaNotes:'STR benchmark car. Hardtop adds rigidity and saves 25kg vs soft top. TORSEN LSD critical for exit traction. Very responsive to alignment — -2.5° front camber, slight front toe-out transforms handling. Keep rear ARB mild to preserve natural rotation. 200TW tire is transformative.',
+    tendencies:'rwd_neutral'
+  },
+  fit_gd3:{
+    name:'2005 Honda Fit GD3', short:'GD3 Fit', cls:'STS/STF', layout:'fwd',
+    spec:'L15A 109hp · FWD · 5-Speed',
+    sccaClass:'STS',
+    stockSpring:{f:1.8,r:1.5},
+    swaybars:{f:{present:true,dia:18,adj:'fixed'},r:{present:true,dia:13,adj:'fixed'}},
+    stockTire:{fw:185,fa:55,fr:15,frimW:5.5, rw:185,ra:55,rr:15,rrimW:5.5},
+    peakHP:109, peakTQ:105, peakHPrpm:5800, peakTQrpm:4800, maxRPM:6500,
+    hpCurve:[.14,.24,.37,.50,.64,.75,.86,.94,1.0,.97,.86,.72,.58,.44],
+    tqCurve:[.58,.72,.82,.88,.92,.94,.97,1.0,.99,.93,.80,.65,.50,.38],
+    baseAX:{us:3.5,ti:6.0,mc:5.0,et:4.5,br:3.5,rc:7.5,sf:5.5},
+    baseTR:{us:3.0,ti:5.5,mc:5.5,et:4.0,br:4.0,rc:7.0,sf:5.5},
+    sccaNotes:'STS eligible. Classic FWD understeer challenge car. Stiff rear ARB is the most impactful mod — helps rotate the car dramatically. Front camber to -2.5° to -3° essential. Engine weight over front axle limits ultimate grip — drive with entry speed, trail brake for rotation.',
+    tendencies:'fwd_us'
+  },
+  civic_fk8:{
+    name:'2020 Honda Civic Type R FK8', short:'FK8 CTR', cls:'STU/STX', layout:'fwd',
+    spec:'K20C1 306hp · FWD · 6-Speed',
+    sccaClass:'STU',
+    stockSpring:{f:4.0,r:3.5},
+    swaybars:{f:{present:true,dia:28,adj:'fixed'},r:{present:true,dia:20,adj:'fixed'}},
+    stockTire:{fw:245,fa:30,fr:20,frimW:8.5, rw:245,ra:30,rr:20,rrimW:8.5},
+    peakHP:306, peakTQ:295, peakHPrpm:6500, peakTQrpm:2500, maxRPM:7000,
+    hpCurve:[.10,.15,.22,.33,.47,.59,.71,.81,.89,.95,.99,1.0,.94,.80],
+    tqCurve:[.58,.76,.89,.97,1.0,.99,.98,.97,.96,.94,.89,.82,.73,.60],
+    baseAX:{us:5.5,ti:7.5,mc:7.0,et:7.0,br:6.5,rc:5.5,sf:7.5},
+    baseTR:{us:5.8,ti:8.0,mc:8.0,et:7.5,br:7.0,rc:5.0,sf:7.5},
+    sccaNotes:'STU class. Most capable FWD on the list by a wide margin. Factory LSD transforms exit traction. 3-mode adaptive dampers are legal in STU. Stock 245/30R20 limit tire options — wider than optimal for autocross. Watch brake fade on track days — upgrade pads before first session.',
+    tendencies:'fwd_balanced'
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+//  TIRE COMPOUNDS
+// ═══════════════════════════════════════════════════════
+const COMPOUNDS = {
+  allseason:[
+    {id:'ps_as4',name:'Michelin Pilot Sport A/S 4',tw:600,dry:7.5,wet:9.0,stop:7.5,lsc:7.0,hsc:7.5,latG:7.5,heat:9.5,dur:9.0,price:'$230-280',note:'Best all-season for track use. Excellent wet, respectable dry grip. Great for cold-weather events.'},
+    {id:'cont_dws',name:'Continental DWS06+',tw:560,dry:7.0,wet:9.2,stop:7.8,lsc:6.8,hsc:7.2,latG:7.0,heat:9.5,dur:9.2,price:'$180-240',note:'Excellent all-weather capability. Not a performance first tire — daily driver with track use acceptable.'},
+    {id:'hank_evo3',name:'Hankook Ventus S1 evo3 A/S',tw:500,dry:7.8,wet:8.8,stop:7.6,lsc:7.2,hsc:7.6,latG:7.6,heat:9.2,dur:8.8,price:'$170-230',note:'Balanced performance for street and occasional track. Better dry performance than most A/S tires.'}
+  ],
+  '200tw':[
+    {id:'rt660p',name:'Falken RT660+',tw:200,dry:9.5,wet:7.5,stop:9.2,lsc:9.4,hsc:9.0,latG:9.5,heat:8.2,dur:6.8,price:'$220-280',note:'Best current 200TW for autocross. Excellent in cool-to-moderate conditions. Very progressive limit behavior. Successor to the legendary RT660.'},
+    {id:'re71rs',name:'Bridgestone RE71RS',tw:200,dry:9.5,wet:7.0,stop:9.4,lsc:9.3,hsc:8.8,latG:9.5,heat:7.5,dur:6.2,price:'$240-310',note:'Legendary autocross tire. Extremely high peak grip but heat sensitive — best in cool temps under 80°F. Can overheat on long track runs.'},
+    {id:'re71rz',name:'Bridgestone RE71RZ',tw:200,dry:9.8,wet:7.2,stop:9.6,lsc:9.5,hsc:9.2,latG:9.8,heat:7.2,dur:5.8,price:'$260-340',note:'Next-gen RE71 series. Higher peak grip than RS but even more heat sensitive. Best for short autocross runs in cool weather. Benchmark dry performance.'},
+    {id:'p01r',name:'Vittour P-01R',tw:200,dry:8.8,wet:7.0,stop:8.6,lsc:8.8,hsc:8.5,latG:8.9,heat:8.5,dur:7.5,price:'$160-210',note:'Best value in 200TW. More heat tolerant than Bridgestone options. Slightly less peak grip but more consistent over multiple runs. Great budget choice.'},
+    {id:'v730',name:'Kumho V730',tw:200,dry:8.5,wet:6.8,stop:8.4,lsc:8.6,hsc:8.2,latG:8.7,heat:8.0,dur:7.8,price:'$150-200',note:'Solid 200TW performer. Good consistency across temperatures. Slightly understeer-biased limit behavior. Good for beginners learning car control.'},
+    {id:'toyo_rr',name:'Toyo Proxes RR',tw:200,dry:9.2,wet:6.5,stop:9.0,lsc:9.1,hsc:8.7,latG:9.3,heat:7.8,dur:6.5,price:'$200-260',note:'Strong autocross performer. Good high-RPM corner grip. Less wet performance than Falken. Popular in northeast autocross community.'}
+  ],
+  summer:[
+    {id:'ecs02',name:'Continental ExtremeContact Sport 02',tw:340,dry:8.5,wet:9.0,stop:8.6,lsc:8.4,hsc:8.7,latG:8.6,heat:9.0,dur:8.5,price:'$190-250',note:'Best wet performance in summer category. Excellent balance of dry/wet. Great for mixed conditions track days. Progressive limit behavior.'},
+    {id:'ps4s',name:'Michelin Pilot Sport 4S',tw:300,dry:9.0,wet:9.2,stop:9.0,lsc:8.9,hsc:9.0,latG:9.1,heat:9.2,dur:9.0,price:'$260-380',note:'The gold standard summer UHP tire. Exceptional wet and dry balance. Excellent heat tolerance for a summer tire. Works well in a wide temperature range. Benchmark for the category.'},
+    {id:'indy500',name:'Firestone Firehawk Indy 500',tw:340,dry:8.5,wet:8.5,stop:8.7,lsc:8.5,hsc:8.6,latG:8.7,heat:8.8,dur:8.5,price:'$160-210',note:'Best value summer UHP. Excellent dry grip for the price. Good wet performance. Popular track day tire due to value. Heat tolerance better than expected at this price point.'},
+    {id:'ps4',name:'Michelin Pilot Sport 4',tw:400,dry:8.5,wet:9.0,stop:8.6,lsc:8.4,hsc:8.6,latG:8.5,heat:9.0,dur:9.0,price:'$190-260',note:'More street-oriented than PS4S. Excellent wet performance. Very durable for a summer tire. Great daily driver that handles occasional track use well.'},
+    {id:'pot_sport',name:'Bridgestone Potenza Sport',tw:300,dry:8.8,wet:8.8,stop:8.8,lsc:8.7,hsc:8.8,latG:8.9,heat:8.8,dur:8.2,price:'$200-280',note:'Strong Bridgestone summer offering. Balanced dry and wet performance. Good feedback through steering. Popular in Europe for track day use.'}
+  ]
+};
+
+// ═══════════════════════════════════════════════════════
+//  ENGINE MODS (apply to all cars with per-car effects)
+// ═══════════════════════════════════════════════════════
+// RPM points: 1000,1500,2000,2500,3000,3500,4000,4500,5000,5500,6000,6500,7000,7500
+const BASE_RPMS = [1000,1500,2000,2500,3000,3500,4000,4500,5000,5500,6000,6500,7000,7500];
+
+const ENGINE_MODS = [
+  {id:'cai',name:'Cold Air Intake',legal:'Legal — All ST',
+   desc:'Reduces intake air temperature, improves high-RPM airflow. Marginal gains on most NA cars; more notable on turbocharged applications.',
+   gainDesc:'+3-6 HP (upper RPM), +1-2 TQ midrange',
+   hp:[0,0,0,1,1,2,2,3,3,4,5,6,5,4],
+   tq:[0,0,0,1,2,2,2,2,2,1,1,0,0,0]},
+  {id:'sri',name:'Short Ram Intake',legal:'Legal — All ST',
+   desc:'Shorter path = sharper throttle response at low-mid RPM. Less peak power than CAI but better throttle feel under 4500 RPM.',
+   gainDesc:'+2-4 HP midrange, improved throttle response',
+   hp:[0,0,1,2,3,3,3,3,2,2,1,1,0,0],
+   tq:[0,1,2,3,3,3,3,2,2,1,1,0,0,0]},
+  {id:'catback',name:'Cat-Back Exhaust',legal:'Legal — All ST',
+   desc:'Reduces backpressure from mid-pipe to tip. Power gains mostly at mid-to-high RPM. Also improves sound character.',
+   gainDesc:'+4-8 HP (3500+ RPM), +2-4 TQ',
+   hp:[0,0,0,0,1,2,3,4,5,6,7,8,7,5],
+   tq:[0,0,0,1,2,3,3,3,3,2,2,1,0,0]},
+  {id:'hiflow_cat',name:'High-Flow Catalytic Converter',legal:'Legal — Most ST',
+   desc:'Reduces restriction in catalytic converter. Works well paired with cat-back exhaust. Minimal gains alone but synergistic with full exhaust.',
+   gainDesc:'+2-4 HP across all RPM',
+   hp:[0,0,1,1,2,2,2,2,3,3,3,4,3,2],
+   tq:[0,0,1,1,2,2,2,2,2,2,1,1,0,0]},
+  {id:'sst_headers',name:'Headers — Short Tube',legal:'Legal — ST',
+   desc:'Improves exhaust scavenging at high RPM. Less low-end torque disruption than long-tube. Best for daily-driven track cars needing broad power.',
+   gainDesc:'+6-10 HP (5000+ RPM), ±2 TQ low end',
+   hp:[0,0,0,-1,0,1,2,4,6,8,9,10,9,7],
+   tq:[0,0,-1,-2,0,1,2,3,3,3,2,1,0,0]},
+  {id:'lt_headers',name:'Headers — Long Tube',legal:'Verify sub-class rules',
+   desc:'Maximum scavenging efficiency. Significant top-end gains at the cost of some low-end torque. Best for track-focused builds.',
+   gainDesc:'+12-18 HP peak, -3 TQ below 3000 RPM',
+   hp:[0,0,0,-1,-1,1,3,5,8,11,14,17,16,12],
+   tq:[0,0,-2,-3,-2,0,2,4,4,3,2,1,0,-1]},
+  {id:'tune',name:'ECU Tune / Flash',legal:'Legal — STU/STX (verify ST)',
+   desc:'Optimizes ignition timing, fuel maps, and boost (turbo cars). Largest single gain for turbocharged vehicles. NA cars see modest improvements.',
+   gainDesc:'+8-25 HP (varies: +25 turbo, +8 NA)',
+   hp:[0,0,1,2,3,4,5,6,8,10,12,14,13,10],
+   tq:[0,1,2,4,6,8,8,8,7,6,4,3,1,0]},
+  {id:'tb',name:'Throttle Body Upgrade',legal:'Legal — Most ST',
+   desc:'Larger throttle bore improves airflow at high RPM. Mainly affects cars where stock throttle body is a restriction point (4-cyl economy engines).',
+   gainDesc:'+2-4 HP (high RPM), improved high-RPM feel',
+   hp:[0,0,0,0,0,0,1,1,2,2,3,3,2,1],
+   tq:[0,0,0,0,0,1,1,1,1,1,1,0,0,0]},
+  {id:'im',name:'Intake Manifold Port Match',legal:'Legal — ST',
+   desc:'Smooths intake manifold ports to match head ports — removes casting flashing and mismatches. Improves flow efficiency at all RPM.',
+   gainDesc:'+2-4 HP midrange, smoother power delivery',
+   hp:[0,0,0,1,1,2,2,2,3,3,2,2,1,0],
+   tq:[0,0,1,1,2,2,2,2,2,1,1,0,0,0]}
+];
+
+// ═══════════════════════════════════════════════════════
+//  APP STATE
+// ═══════════════════════════════════════════════════════
+let carId = 'e82_128i';
+let mode  = 'autocross';
+let activeTab = 'suspension';
+let activeCompoundCat = 'allseason';
+let selectedCompound = null;
+let activeMods = new Set();
+
+let suspState = {
+  fs:50,rs:50, cd:12,rd:12,
+  farbOn:true, farbDia:20, farbAdj:'fixed',
+  rarbOn:true,  rarbDia:16, rarbAdj:'fixed',
+  fca:-15, rca:-10, fte:0, rte:0
+};
+
+let tireState = {
+  fw:205,fa:55,fr:16,frimW:7.0,
+  rw:225,ra:50,rr:16,rrimW:7.0,
+  wet:false
+};
+
+let charts = {};
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+function init(){
+  buildCarBar();
+  initCharts();
+  selectCar('e82_128i');
+  setCompoundCat('allseason');
+}
+
+function buildCarBar(){
+  const bar = document.getElementById('carBar');
+  Object.entries(CARS).forEach(([id,c])=>{
+    const b = document.createElement('button');
+    b.className='car-tab'; b.id='tab_'+id;
+    b.onclick=()=>selectCar(id);
+    b.innerHTML=`${c.short}<span class="cs">${c.cls}</span>`;
+    bar.appendChild(b);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  CAR SELECTION
+// ═══════════════════════════════════════════════════════
+function selectCar(id){
+  carId = id;
+  const c = CARS[id];
+  document.querySelectorAll('.car-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab_'+id).classList.add('active');
+  document.getElementById('carName').textContent = c.name;
+  document.getElementById('carClass').textContent = c.sccaClass;
+  document.getElementById('carSpec').textContent = c.spec;
+  document.getElementById('sccaTxt').textContent = c.sccaNotes;
+
+  // Reset to stock values for this car
+  const sf = Math.round(c.stockSpring.f*10);
+  const sr = Math.round(c.stockSpring.r*10);
+  suspState.fs=sf; suspState.rs=sr;
+  suspState.cd=12; suspState.rd=12;
+  suspState.farbOn=c.swaybars.f.present;
+  suspState.farbDia=c.swaybars.f.present?c.swaybars.f.dia:20;
+  suspState.rarbOn=c.swaybars.r.present;
+  suspState.rarbDia=c.swaybars.r.present?c.swaybars.r.dia:16;
+  suspState.fca=-15; suspState.rca=-10;
+  suspState.fte=0; suspState.rte=0;
+
+  // Tire defaults
+  tireState.fw=c.stockTire.fw; tireState.fa=c.stockTire.fa;
+  tireState.fr=c.stockTire.fr; tireState.frimW=c.stockTire.frimW;
+  tireState.rw=c.stockTire.rw; tireState.ra=c.stockTire.ra;
+  tireState.rr=c.stockTire.rr; tireState.rrimW=c.stockTire.rrimW;
+
+  activeMods.clear();
+
+  syncSuspUI();
+  syncTireUI();
+  syncEngineUI();
+  updateARBUI();
+  updateAll();
+}
+
+function syncSuspUI(){
+  const c = CARS[carId];
+  const sf = suspState.fs/10, sr = suspState.rs/10;
+  document.getElementById('sl_fs').value=suspState.fs;
+  document.getElementById('sl_rs').value=suspState.rs;
+  document.getElementById('val_fs').textContent=sf.toFixed(1)+' kg/mm';
+  document.getElementById('val_rs').textContent=sr.toFixed(1)+' kg/mm';
+  document.getElementById('sm_fs').textContent='Stock: '+c.stockSpring.f.toFixed(1)+' kg/mm';
+  document.getElementById('sm_rs').textContent='Stock: '+c.stockSpring.r.toFixed(1)+' kg/mm';
+  document.getElementById('sl_farb').value=suspState.farbDia;
+  document.getElementById('val_farb').textContent=suspState.farbDia+' mm';
+  document.getElementById('sm_farb').textContent='Stock: '+(c.swaybars.f.present?c.swaybars.f.dia+'mm':'N/A');
+  document.getElementById('sl_rarb').value=suspState.rarbDia;
+  document.getElementById('val_rarb').textContent=suspState.rarbDia+' mm';
+  document.getElementById('sm_rarb').textContent='Stock: '+(c.swaybars.r.present?c.swaybars.r.dia+'mm':'N/A');
+  document.getElementById('tog_farb').checked=suspState.farbOn;
+  document.getElementById('tog_rarb').checked=suspState.rarbOn;
+  document.getElementById('sl_fca').value=suspState.fca;
+  document.getElementById('val_fca').textContent=(suspState.fca/10).toFixed(1)+'°';
+  document.getElementById('sl_rca').value=suspState.rca;
+  document.getElementById('val_rca').textContent=(suspState.rca/10).toFixed(1)+'°';
+  document.getElementById('sl_fte').value=suspState.fte;
+  document.getElementById('val_fte').textContent=toeStr(suspState.fte,true);
+  document.getElementById('sl_rte').value=suspState.rte;
+  document.getElementById('val_rte').textContent=toeStr(suspState.rte,false);
+  updateDampUI();
+}
+
+function syncTireUI(){
+  const tw=['165','175','185','195','205','215','225','235','245','255','265','275','285','295','305'];
+  const ta=['25','30','35','40','45','50','55','60','65'];
+  const tr=['14','15','16','17','18','19','20'];
+
+  setSelectVal('fw',tireState.fw.toString());
+  setSelectVal('fa',tireState.fa.toString());
+  setSelectVal('fr',tireState.fr.toString());
+  setSelectVal('rw',tireState.rw.toString());
+  setSelectVal('ra',tireState.ra.toString());
+  setSelectVal('rr',tireState.rr.toString());
+
+  const frimSlider = Math.round(tireState.frimW*10);
+  const rrimSlider = Math.round(tireState.rrimW*10);
+  document.getElementById('sl_frimw').value=frimSlider;
+  document.getElementById('val_frimw').textContent=tireState.frimW.toFixed(1)+'"';
+  document.getElementById('sl_rrimw').value=rrimSlider;
+  document.getElementById('val_rrimw').textContent=tireState.rrimW.toFixed(1)+'"';
+
+  updateTireInfo();
+}
+
+function setSelectVal(id,val){
+  const sel=document.getElementById(id);
+  for(let o of sel.options){if(o.value===val||o.text===val){sel.value=o.value;break;}}
+}
+
+function syncEngineUI(){
+  const list=document.getElementById('engModList');
+  list.innerHTML='';
+  ENGINE_MODS.forEach(m=>{
+    const active=activeMods.has(m.id);
+    const card=document.createElement('div');
+    card.className='mod-card'+(active?' active':'');
+    card.id='mc_'+m.id;
+    card.onclick=()=>toggleMod(m.id);
+    card.innerHTML=`
+      <div class="mc-check">${active?'✓':''}</div>
+      <div class="mc-body">
+        <div class="mc-name">${m.name}</div>
+        <div class="mc-desc">${m.desc}</div>
+        <div class="mc-gain">${m.gainDesc}</div>
+        <span class="mc-legal">${m.legal}</span>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  CHART INITIALIZATION
+// ═══════════════════════════════════════════════════════
+function initCharts(){
+  const radarLabels=['Understeer\nBalance','Turn-In\nResponse','Mid-Corner\nStability','Exit\nTraction','Body Roll\nControl','Ride\nCompliance','Steering\nFeedback'];
+  const radarOpts={
+    type:'radar',
+    data:{labels:radarLabels,datasets:[
+      {label:'Baseline',data:[5,5,5,5,5,5,5],backgroundColor:'rgba(0,212,255,.08)',borderColor:'rgba(0,212,255,.5)',borderWidth:2,pointBackgroundColor:'rgba(0,212,255,.5)',pointRadius:4},
+      {label:'Modified',data:[5,5,5,5,5,5,5],backgroundColor:'rgba(0,255,136,.08)',borderColor:'rgba(0,255,136,.8)',borderWidth:2,pointBackgroundColor:'rgba(0,255,136,.8)',pointRadius:5}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:10,grid:{color:'rgba(42,47,62,.8)'},angleLines:{color:'rgba(42,47,62,.8)'},ticks:{stepSize:2,color:'rgba(122,128,153,.5)',backdropColor:'transparent',font:{size:9}},pointLabels:{color:'#7a8099',font:{size:10,weight:'600'}}}},plugins:{legend:{display:false},tooltip:{backgroundColor:'#1e2330',borderColor:'#2a2f3e',borderWidth:1,titleColor:'#e8eaf0',bodyColor:'#7a8099',callbacks:{label:c=>` ${c.dataset.label}: ${Number(c.raw).toFixed(1)}/10`}}}}
+  };
+  charts.radar = new Chart(document.getElementById('radarChart').getContext('2d'),radarOpts);
+
+  const tireLabels=['Dry Grip','Wet Perf','Stopping','Low Speed','High Speed','Lateral G','Heat Tol','Durability'];
+  charts.tireRadar = new Chart(document.getElementById('tireRadarChart').getContext('2d'),{
+    type:'radar',
+    data:{labels:tireLabels,datasets:[
+      {label:'Stock',data:[7,8,7.5,7,7.5,7,9.5,9],backgroundColor:'rgba(0,212,255,.08)',borderColor:'rgba(0,212,255,.5)',borderWidth:2,pointRadius:4},
+      {label:'Selected',data:[7,8,7.5,7,7.5,7,9.5,9],backgroundColor:'rgba(0,255,136,.08)',borderColor:'rgba(0,255,136,.8)',borderWidth:2,pointRadius:5}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:10,grid:{color:'rgba(42,47,62,.8)'},angleLines:{color:'rgba(42,47,62,.8)'},ticks:{stepSize:2,color:'rgba(122,128,153,.5)',backdropColor:'transparent',font:{size:9}},pointLabels:{color:'#7a8099',font:{size:10,weight:'600'}}}},plugins:{legend:{display:false}}}
+  });
+
+  charts.fitment = new Chart(document.getElementById('fitmentChart').getContext('2d'),{
+    type:'bar',
+    data:{labels:['Turn-In','Mid-Corner','Exit Traction','Ride Quality','Wet Safety'],
+      datasets:[
+        {label:'Stock',data:[5,5,5,5,5],backgroundColor:'rgba(0,212,255,.3)',borderRadius:4},
+        {label:'Current',data:[5,5,5,5,5],backgroundColor:'rgba(0,255,136,.7)',borderRadius:4}
+      ]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      scales:{x:{min:0,max:10,grid:{color:'rgba(42,47,62,.5)'},ticks:{color:'#7a8099',font:{size:9}}},y:{grid:{display:false},ticks:{color:'#7a8099',font:{size:10}}}},
+      plugins:{legend:{display:false}}}
+  });
+
+  // DYNO CHART
+  const car=CARS[carId];
+  charts.dyno = new Chart(document.getElementById('dynoChart').getContext('2d'),{
+    type:'line',
+    data:{labels:BASE_RPMS,datasets:[
+      {label:'Stock HP',data:[],borderColor:'rgba(0,212,255,.7)',borderWidth:2.5,pointRadius:0,tension:.4,yAxisID:'y'},
+      {label:'Mod HP', data:[],borderColor:'rgba(0,255,136,.9)',borderWidth:2,borderDash:[5,3],pointRadius:0,tension:.4,yAxisID:'y'},
+      {label:'Stock TQ',data:[],borderColor:'rgba(255,107,53,.7)',borderWidth:2.5,pointRadius:0,tension:.4,yAxisID:'y1'},
+      {label:'Mod TQ', data:[],borderColor:'rgba(255,215,0,.9)',borderWidth:2,borderDash:[5,3],pointRadius:0,tension:.4,yAxisID:'y1'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      scales:{
+        x:{grid:{color:'rgba(42,47,62,.5)'},ticks:{color:'#7a8099',font:{size:9}},title:{display:true,text:'RPM',color:'#7a8099',font:{size:10}}},
+        y:{grid:{color:'rgba(42,47,62,.3)'},ticks:{color:'rgba(0,212,255,.8)',font:{size:9}},title:{display:true,text:'Horsepower',color:'rgba(0,212,255,.8)',font:{size:10}},position:'left'},
+        y1:{grid:{display:false},ticks:{color:'rgba(255,107,53,.8)',font:{size:9}},title:{display:true,text:'Torque (lb-ft)',color:'rgba(255,107,53,.8)',font:{size:10}},position:'right'}
+      },
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#1e2330',borderColor:'#2a2f3e',borderWidth:1}}}
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  MODE / TAB SWITCHING
+// ═══════════════════════════════════════════════════════
+function setMode(m){
+  mode=m;
+  document.getElementById('modeAutox').classList.toggle('active',m==='autocross');
+  document.getElementById('modeTrack').classList.toggle('active',m==='track');
+  updateAll();
+}
+
+function switchTab(tab){
+  activeTab=tab;
+  ['suspension','tire','engine'].forEach(t=>{
+    document.getElementById('lp-'+t).classList.toggle('hidden',t!==tab);
+    document.getElementById('rp-'+t).classList.toggle('hidden',t!==tab);
+    document.querySelectorAll('.tab-nav-btn').forEach((b,i)=>{
+      b.classList.toggle('active',['suspension','tire','engine'][i]===tab);
+    });
+  });
+  setTimeout(()=>{Object.values(charts).forEach(ch=>{try{ch.resize();}catch(e){}});drawWheelCanvas();},50);
+  updateAll();
+}
+
+// ═══════════════════════════════════════════════════════
+//  SUSPENSION CONTROLS
+// ═══════════════════════════════════════════════════════
+function onSuspSetup(){
+  const v=document.getElementById('suspSetup').value;
+  document.getElementById('customClicksRow').classList.toggle('hidden',v!=='custom');
+  updateDampUI();
+  onSuspSlider();
+}
+
+function getDampClicks(){
+  const v=document.getElementById('suspSetup').value;
+  if(v==='custom'){
+    return{f:parseInt(document.getElementById('customFClicks').value)||20,
+           r:parseInt(document.getElementById('customRClicks').value)||20};
+  }
+  const s=SUSP_SETUPS[v];
+  if(!s||s.fc===0)return{f:24,r:24}; // stock = treat as 24 virtual
+  return{f:s.fc,r:s.rc};
+}
+
+function updateDampUI(){
+  const {f,r}=getDampClicks();
+  const cdEl=document.getElementById('sl_cd');
+  const rdEl=document.getElementById('sl_rd');
+  const isStock=document.getElementById('suspSetup').value==='stock';
+  cdEl.max=isStock?10:f; rdEl.max=isStock?10:r;
+  if(parseInt(cdEl.value)>cdEl.max)cdEl.value=Math.floor(cdEl.max/2);
+  if(parseInt(rdEl.value)>rdEl.max)rdEl.value=Math.floor(rdEl.max/2);
+  onDampSlider();
+}
+
+function onDampSlider(){
+  const {f,r}=getDampClicks();
+  const isStock=document.getElementById('suspSetup').value==='stock';
+  const cv=parseInt(document.getElementById('sl_cd').value);
+  const rv=parseInt(document.getElementById('sl_rd').value);
+  const cMax=isStock?10:f, rMax=isStock?10:r;
+  suspState.cd=cv; suspState.rd=rv;
+  document.getElementById('val_cd').textContent=cv;
+  document.getElementById('val_rd').textContent=rv;
+  document.getElementById('disp_cd').textContent=isStock
+    ?`OEM — ${dampLabel(cv,cMax)}`
+    :`Click ${cv} of ${cMax} — ${dampLabel(cv,cMax)}`;
+  document.getElementById('disp_rd').textContent=isStock
+    ?`OEM — ${dampLabel(rv,rMax)}`
+    :`Click ${rv} of ${rMax} — ${dampLabel(rv,rMax)}`;
+  updateAll();
+}
+
+function dampLabel(v,max){
+  const pct=v/max;
+  if(pct<=.33)return'Soft';
+  if(pct<=.67)return'Medium';
+  return'Firm';
+}
+
+function onSuspSlider(){
+  suspState.fs=parseInt(document.getElementById('sl_fs').value);
+  suspState.rs=parseInt(document.getElementById('sl_rs').value);
+  suspState.farbDia=parseInt(document.getElementById('sl_farb').value);
+  suspState.rarbDia=parseInt(document.getElementById('sl_rarb').value);
+  suspState.farbAdj=document.getElementById('sel_farb_adj').value;
+  suspState.rarbAdj=document.getElementById('sel_rarb_adj').value;
+
+  document.getElementById('val_fs').textContent=(suspState.fs/10).toFixed(1)+' kg/mm';
+  document.getElementById('val_rs').textContent=(suspState.rs/10).toFixed(1)+' kg/mm';
+  document.getElementById('val_farb').textContent=suspState.farbDia+' mm';
+  document.getElementById('val_rarb').textContent=suspState.rarbDia+' mm';
+  updateAll();
+}
+
+function onAlignSlider(){
+  suspState.fca=parseInt(document.getElementById('sl_fca').value);
+  suspState.rca=parseInt(document.getElementById('sl_rca').value);
+  suspState.fte=parseInt(document.getElementById('sl_fte').value);
+  suspState.rte=parseInt(document.getElementById('sl_rte').value);
+  document.getElementById('val_fca').textContent=(suspState.fca/10).toFixed(1)+'°';
+  document.getElementById('val_rca').textContent=(suspState.rca/10).toFixed(1)+'°';
+  document.getElementById('val_fte').textContent=toeStr(suspState.fte,true);
+  document.getElementById('val_rte').textContent=toeStr(suspState.rte,false);
+  updateAll();
+}
+
+function toeStr(v,isFront){
+  if(v===0)return'Neutral';
+  const abs=['1/16"','1/8"','3/16"'][Math.abs(v)-1];
+  if(isFront){
+    return v>0?abs+' Toe-out':abs+' Toe-in';
+  }else{
+    return v>0?abs+' Toe-in':abs+' Toe-out';
+  }
+}
+
+function onARBToggle(){
+  suspState.farbOn=document.getElementById('tog_farb').checked;
+  suspState.rarbOn=document.getElementById('tog_rarb').checked;
+  updateARBUI();
+  updateAll();
+}
+
+function updateARBUI(){
+  const c=CARS[carId];
+  const fOn=suspState.farbOn;
+  const rOn=suspState.rarbOn;
+  document.getElementById('farb-controls').style.opacity=fOn?1:.4;
+  document.getElementById('sl_farb').disabled=!fOn;
+  document.getElementById('rarb-controls').style.opacity=rOn?1:.4;
+  document.getElementById('sl_rarb').disabled=!rOn;
+  const noRNote=document.getElementById('no-rear-arb-note');
+  if(!c.swaybars.r.present){
+    noRNote.classList.remove('hidden');
+    noRNote.textContent='⚠ '+c.swaybars.r.note;
+    if(carId==='e82_128i'||carId==='mx5_nc'){
+      document.getElementById('tog_rarb').checked=false;
+      suspState.rarbOn=false;
+    }
+  } else {
+    noRNote.classList.add('hidden');
+  }
+}
+
+function resetSusp(){
+  const c=CARS[carId];
+  suspState.fs=Math.round(c.stockSpring.f*10);
+  suspState.rs=Math.round(c.stockSpring.r*10);
+  suspState.cd=12; suspState.rd=12;
+  suspState.farbOn=c.swaybars.f.present;
+  suspState.farbDia=c.swaybars.f.present?c.swaybars.f.dia:20;
+  suspState.rarbOn=c.swaybars.r.present;
+  suspState.rarbDia=c.swaybars.r.present?c.swaybars.r.dia:16;
+  suspState.fca=-15; suspState.rca=-10;
+  suspState.fte=0; suspState.rte=0;
+  document.getElementById('suspSetup').value='stock';
+  document.getElementById('customClicksRow').classList.add('hidden');
+  syncSuspUI();
+  updateARBUI();
+  document.getElementById('effectFeed').textContent='Reset to stock settings.';
+  updateAll();
+}
+
+function applyPreset(name){
+  const c=CARS[carId];
+  const presets={
+    neutral:{fs:Math.round(c.stockSpring.f*15),rs:Math.round(c.stockSpring.r*15),
+      farbDia:c.swaybars.f.present?c.swaybars.f.dia+2:20,rarbDia:c.swaybars.r.present?c.swaybars.r.dia+3:16,
+      farbOn:true,rarbOn:c.swaybars.r.present,fca:-20,rca:-15,fte:1,rte:1,cd:15,rd:15},
+    oversteer:{fs:Math.round(c.stockSpring.f*18),rs:Math.round(c.stockSpring.r*20),
+      farbDia:c.swaybars.f.present?c.swaybars.f.dia-2:18,rarbDia:c.swaybars.r.present?c.swaybars.r.dia+5:20,
+      farbOn:true,rarbOn:true,fca:-25,rca:-20,fte:2,rte:1,cd:14,rd:16},
+    understeer:{fs:Math.round(c.stockSpring.f*12),rs:Math.round(c.stockSpring.r*18),
+      farbDia:c.swaybars.f.present?c.swaybars.f.dia+4:24,rarbDia:c.swaybars.r.present?c.swaybars.r.dia-2:14,
+      farbOn:true,rarbOn:c.swaybars.r.present,fca:-15,rca:-12,fte:-1,rte:2,cd:12,rd:13}
+  };
+  Object.assign(suspState, presets[name]);
+  // clamp
+  suspState.fs=Math.max(10,Math.min(200,suspState.fs));
+  suspState.rs=Math.max(10,Math.min(200,suspState.rs));
+  suspState.farbDia=Math.max(17,Math.min(32,suspState.farbDia));
+  suspState.rarbDia=Math.max(12,Math.min(28,suspState.rarbDia));
+  syncSuspUI();
+  updateARBUI();
+  document.getElementById('effectFeed').innerHTML=`<span class="ep">Preset applied: ${name.charAt(0).toUpperCase()+name.slice(1)}</span><br><span class="ew">Adjust individual controls to fine-tune.</span>`;
+  updateAll();
+}
+
+// ═══════════════════════════════════════════════════════
+//  TIRE CONTROLS
+// ═══════════════════════════════════════════════════════
+function onTireChange(){
+  tireState.fw=parseInt(document.getElementById('fw').value);
+  tireState.fa=parseInt(document.getElementById('fa').value);
+  tireState.fr=parseInt(document.getElementById('fr').value);
+  tireState.rw=parseInt(document.getElementById('rw').value);
+  tireState.ra=parseInt(document.getElementById('ra').value);
+  tireState.rr=parseInt(document.getElementById('rr').value);
+  updateTireInfo();
+  drawWheelCanvas();
+  updateTireCharts();
+}
+
+function onRimChange(){
+  tireState.frimW=parseInt(document.getElementById('sl_frimw').value)/10;
+  tireState.rrimW=parseInt(document.getElementById('sl_rrimw').value)/10;
+  document.getElementById('val_frimw').textContent=tireState.frimW.toFixed(1)+'"';
+  document.getElementById('val_rrimw').textContent=tireState.rrimW.toFixed(1)+'"';
+  updateTireInfo();
+  drawWheelCanvas();
+  updateTireCharts();
+}
+
+function updateTireInfo(){
+  const fsw=tireState.fw*tireState.fa/100; // sidewall mm
+  const fod=tireState.fr+2*fsw/25.4; // overall diameter inches
+  const rsw=tireState.rw*tireState.ra/100;
+  const rod=tireState.rr+2*rsw/25.4;
+  document.getElementById('ftireInfo').textContent=
+    `${tireState.fw}/${tireState.fa}R${tireState.fr} — OD: ${fod.toFixed(1)}" · Sidewall: ${fsw.toFixed(0)}mm`;
+  document.getElementById('rtireInfo').textContent=
+    `${tireState.rw}/${tireState.ra}R${tireState.rr} — OD: ${rod.toFixed(1)}" · Sidewall: ${rsw.toFixed(0)}mm`;
+
+  // Rim fitment note
+  const fOptMm=tireState.fw*0.55;
+  const rOptMm=tireState.rw*0.55;
+  const fRimMm=tireState.frimW*25.4;
+  const rRimMm=tireState.rrimW*25.4;
+  document.getElementById('rimFitNote').textContent=
+    `Front optimal rim: ${(fOptMm/25.4-.5).toFixed(1)}"–${(fOptMm/25.4+.5).toFixed(1)}" · Rear: ${(rOptMm/25.4-.5).toFixed(1)}"–${(rOptMm/25.4+.5).toFixed(1)}"`;
+}
+
+function getFitStatus(rimW_in, tireW_mm){
+  const rimMm=rimW_in*25.4;
+  const opt=tireW_mm*0.55;
+  const ratio=rimMm/opt;
+  if(ratio<0.75)return{label:'BULGING — RIM TOO NARROW',cls:'fit-stretch',color:'#ffd700'};
+  if(ratio<0.88)return{label:'SLIGHTLY NARROW',cls:'fit-ok',color:'#00ff88'};
+  if(ratio<=1.12)return{label:'IDEAL FIT',cls:'fit-ideal',color:'#00ff88'};
+  if(ratio<=1.22)return{label:'SLIGHTLY WIDE',cls:'fit-wide',color:'#ff6b35'};
+  return{label:'STRETCHED — RIM TOO WIDE',cls:'fit-stretch',color:'#ff4444'};
+}
+
+// ═══════════════════════════════════════════════════════
+//  WHEEL CANVAS DRAWING
+// ═══════════════════════════════════════════════════════
+function drawWheelCanvas(){
+  const canvas=document.getElementById('wheelCanvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  // Use front tire for visualization
+  const secW=tireState.fw;    // mm
+  const asp=tireState.fa;     // aspect ratio
+  const rimWin=tireState.frimW; // inches
+
+  const swMm=secW*asp/100;   // sidewall height mm
+  const rimWmm=rimWin*25.4;
+
+  // Scale: section width = 60% of canvas width
+  const scale=(W*0.62)/secW; // px per mm
+  const twPx=secW*scale;
+  const swPx=Math.min(swMm*scale, H*0.4);
+  const rimWPx=rimWmm*scale;
+  const rimHPx=36;
+
+  const cx=W/2, botY=H-28;
+  const rimTop=botY-rimHPx;
+  const tireTop=rimTop-swPx;
+  const tireL=cx-twPx/2, tireR=cx+twPx/2;
+  const rimL=cx-rimWPx/2, rimR=cx+rimWPx/2;
+
+  const fit=getFitStatus(rimWin,secW);
+
+  // Background gradient
+  const bg=ctx.createRadialGradient(cx,H*.6,0,cx,H*.6,W*.7);
+  bg.addColorStop(0,'#1a1e2a'); bg.addColorStop(1,'#0d0f14');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+  // TIRE body
+  ctx.beginPath();
+  ctx.moveTo(rimL,rimTop);
+  // left sidewall bezier
+  ctx.bezierCurveTo(
+    rimL-(twPx-rimWPx)*.25, rimTop-swPx*.35,
+    tireL, rimTop-swPx*.65,
+    tireL+twPx*.04, tireTop
+  );
+  ctx.lineTo(tireR-twPx*.04,tireTop);
+  // right sidewall bezier
+  ctx.bezierCurveTo(
+    tireR, rimTop-swPx*.65,
+    rimR+(twPx-rimWPx)*.25, rimTop-swPx*.35,
+    rimR,rimTop
+  );
+  ctx.closePath();
+  ctx.fillStyle='rgba(40,45,60,.9)'; ctx.fill();
+  ctx.strokeStyle=fit.color; ctx.lineWidth=2.5;
+  ctx.stroke();
+
+  // TREAD surface
+  ctx.beginPath();
+  ctx.roundRect(tireL+twPx*.04, tireTop-8, twPx*.92, 14, 4);
+  ctx.fillStyle='#2a3042'; ctx.fill();
+  ctx.strokeStyle=fit.color; ctx.lineWidth=1.5; ctx.stroke();
+
+  // TREAD grooves
+  ctx.strokeStyle='rgba(0,0,0,.6)'; ctx.lineWidth=1;
+  for(let i=1;i<4;i++){
+    const gx=tireL+twPx*.04+twPx*.92*(i/4);
+    ctx.beginPath();ctx.moveTo(gx,tireTop-8);ctx.lineTo(gx,tireTop+6);ctx.stroke();
+  }
+
+  // RIM
+  const rimGrad=ctx.createLinearGradient(rimL,rimTop,rimR,rimTop+rimHPx);
+  rimGrad.addColorStop(0,'#3a4055'); rimGrad.addColorStop(.5,'#5a6580'); rimGrad.addColorStop(1,'#2a3040');
+  ctx.beginPath();
+  ctx.roundRect(rimL,rimTop,rimWPx,rimHPx,3);
+  ctx.fillStyle=rimGrad; ctx.fill();
+  ctx.strokeStyle='#6a7590'; ctx.lineWidth=1.5; ctx.stroke();
+
+  // Rim spoke lines
+  ctx.strokeStyle='rgba(100,120,160,.3)'; ctx.lineWidth=1;
+  for(let i=1;i<5;i++){
+    const lx=rimL+rimWPx*(i/5);
+    ctx.beginPath();ctx.moveTo(lx,rimTop+4);ctx.lineTo(lx,rimTop+rimHPx-4);ctx.stroke();
+  }
+
+  // Bead seat highlight
+  ctx.fillStyle='rgba(0,212,255,.15)';
+  ctx.fillRect(rimL,rimTop,3,rimHPx);
+  ctx.fillRect(rimR-3,rimTop,3,rimHPx);
+
+  // DIMENSION LINES & LABELS
+  ctx.strokeStyle='rgba(122,128,153,.4)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+  // Section width arrow
+  ctx.beginPath();ctx.moveTo(tireL,tireTop-18);ctx.lineTo(tireR,tireTop-18);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(tireL,tireTop-22);ctx.lineTo(tireL,tireTop-14);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(tireR,tireTop-22);ctx.lineTo(tireR,tireTop-14);ctx.stroke();
+  // Sidewall height arrow
+  ctx.beginPath();ctx.moveTo(tireR+14,tireTop);ctx.lineTo(tireR+14,rimTop);ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle='#7a8099'; ctx.font='bold 10px '+getComputedStyle(document.body).fontFamily;
+  ctx.textAlign='center';
+  ctx.fillText(`${secW}mm`,cx,tireTop-22);
+  ctx.textAlign='right';
+  ctx.fillText(`${swMm.toFixed(0)}mm`,tireR+38,tireTop+swPx/2+4);
+  ctx.textAlign='center';
+  ctx.fillStyle='rgba(0,212,255,.8)';
+  ctx.fillText(`${rimWin.toFixed(1)}" rim`,cx,rimTop+rimHPx*.6);
+
+  // Fitment label
+  ctx.fillStyle=fit.color; ctx.font='bold 9px '+getComputedStyle(document.body).fontFamily;
+  ctx.fillText(fit.label,cx,H-8);
+
+  // Update badge
+  const badge=document.getElementById('fitBadge');
+  if(badge){badge.textContent=fit.label;badge.className='fit-badge '+fit.cls;}
+
+  // Wheel info boxes
+  const fswMm=secW*asp/100;
+  const fod=tireState.fr+2*fswMm/25.4;
+  document.getElementById('wheelInfo').innerHTML=`
+    <div class="wi-item"><div class="wi-label">Width</div><div class="wi-val">${secW}mm</div></div>
+    <div class="wi-item"><div class="wi-label">Sidewall</div><div class="wi-val">${fswMm.toFixed(0)}mm</div></div>
+    <div class="wi-item"><div class="wi-label">Overall Ø</div><div class="wi-val">${fod.toFixed(1)}"</div></div>
+    <div class="wi-item"><div class="wi-label">Rim W</div><div class="wi-val">${rimWin.toFixed(1)}"</div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+//  COMPOUND CONTROLS
+// ═══════════════════════════════════════════════════════
+function setCompoundCat(cat){
+  activeCompoundCat=cat;
+  selectedCompound=null;
+  ['allseason','200tw','summer'].forEach(c=>{
+    document.getElementById('cat_'+c).classList.toggle('sel',c===cat);
+  });
+  renderCompoundGrid();
+}
+
+function renderCompoundGrid(){
+  const grid=document.getElementById('compoundGrid');
+  const list=COMPOUNDS[activeCompoundCat];
+  grid.innerHTML='';
+  list.forEach((c,i)=>{
+    const isSel=selectedCompound&&selectedCompound.id===c.id;
+    const div=document.createElement('div');
+    div.className='comp-opt'+(isSel?' sel':'');
+    div.onclick=()=>selectCompound(c);
+    div.innerHTML=`<div class="comp-name">${c.name}</div>
+      <div class="comp-tw">${activeCompoundCat==='200tw'?'200TW':activeCompoundCat==='summer'?'Summer UHP':'All-Season'} · ${c.price}/tire</div>
+      <div class="comp-grip">Dry: ${'★'.repeat(Math.round(c.dry/2))} | Wet: ${'★'.repeat(Math.round(c.wet/2))}</div>`;
+    grid.appendChild(div);
+  });
+  if(!selectedCompound&&list.length)selectCompound(list[0]);
+}
+
+function selectCompound(c){
+  selectedCompound=c;
+  document.querySelectorAll('.comp-opt').forEach(el=>el.classList.remove('sel'));
+  const list=COMPOUNDS[activeCompoundCat];
+  const idx=list.findIndex(x=>x.id===c.id);
+  if(idx>=0&&document.querySelectorAll('.comp-opt')[idx])
+    document.querySelectorAll('.comp-opt')[idx].classList.add('sel');
+  document.getElementById('compoundDetail').innerHTML=
+    `<strong style="color:var(--tx)">${c.name}</strong><br>
+     TW: ${c.tw} · Dry: ${c.dry}/10 · Wet: ${c.wet}/10 · Heat: ${c.heat}/10<br>
+     <span style="color:var(--dim)">${c.note}</span>`;
+  updateTireCharts();
+}
+
+function onCompoundChange(){
+  tireState.wet=document.getElementById('tog_wet').checked;
+  updateTireCharts();
+}
+
+// ═══════════════════════════════════════════════════════
+//  TIRE CHARTS UPDATE
+// ═══════════════════════════════════════════════════════
+function getStockCompoundData(){
+  // Stock tier = all-season first compound
+  const base=COMPOUNDS.allseason[0];
+  if(tireState.wet)return[base.dry*.6,base.wet,base.stop*.7,base.lsc*.7,base.hsc*.7,base.latG*.75,base.heat,base.dur];
+  return[base.dry,base.wet,base.stop,base.lsc,base.hsc,base.latG,base.heat,base.dur];
+}
+
+function getSelectedCompoundData(){
+  const c=selectedCompound||COMPOUNDS.allseason[0];
+  const w=tireState.wet;
+  if(w){
+    return[c.dry*.75,c.wet,c.stop*.85,c.lsc*.8,c.hsc*.8,c.latG*.8,c.heat,c.dur];
+  }
+  return[c.dry,c.wet,c.stop,c.lsc,c.hsc,c.latG,c.heat,c.dur];
+}
+
+function updateTireCharts(){
+  if(!charts.tireRadar)return;
+  charts.tireRadar.data.datasets[0].data=getStockCompoundData();
+  charts.tireRadar.data.datasets[1].data=getSelectedCompoundData();
+  charts.tireRadar.update();
+
+  // Fitment impact chart
+  const c=CARS[carId];
+  const stockFW=c.stockTire.fw;
+  const fw=tireState.fw;
+  const compound=selectedCompound||COMPOUNDS.allseason[0];
+  const compGain=(compound.dry-7)/10;
+  const widthEffect=(fw-stockFW)/50;
+  const stockVals=[5,5,5,5,5];
+  const modVals=[
+    Math.max(0,Math.min(10,5+widthEffect*3+compGain*2)),
+    Math.max(0,Math.min(10,5+widthEffect*1.5+compGain*2)),
+    Math.max(0,Math.min(10,5+(tireState.rw-c.stockTire.rw)/50*3+compGain*1.5)),
+    Math.max(0,Math.min(10,5-Math.abs(widthEffect)*1.5+compound.dur/10)),
+    Math.max(0,Math.min(10,5+compGain+(tireState.wet?compound.wet/10-1:0)))
+  ];
+  charts.fitment.data.datasets[0].data=stockVals;
+  charts.fitment.data.datasets[1].data=modVals;
+  charts.fitment.update();
+  drawWheelCanvas();
+}
+
+// ═══════════════════════════════════════════════════════
+//  ENGINE MOD CONTROLS
+// ═══════════════════════════════════════════════════════
+function toggleMod(id){
+  if(activeMods.has(id))activeMods.delete(id);
+  else activeMods.add(id);
+  const card=document.getElementById('mc_'+id);
+  const active=activeMods.has(id);
+  card.classList.toggle('active',active);
+  card.querySelector('.mc-check').textContent=active?'✓':'';
+  updateDyno();
+}
+
+function getModdedCurves(){
+  const c=CARS[carId];
+  const hp=[...c.hpCurve]; const tq=[...c.tqCurve];
+  activeMods.forEach(id=>{
+    const m=ENGINE_MODS.find(x=>x.id===id);
+    if(!m)return;
+    m.hp.forEach((d,i)=>{hp[i]+=d/c.peakHP;});
+    m.tq.forEach((d,i)=>{tq[i]+=d/c.peakTQ;});
+  });
+  return{hp,tq};
+}
+
+function updateDyno(){
+  const c=CARS[carId];
+  const {hp:mhp,tq:mtq}=getModdedCurves();
+  const stockHP=c.hpCurve.map(v=>v*c.peakHP);
+  const stockTQ=c.tqCurve.map(v=>v*c.peakTQ);
+  const modHP=mhp.map(v=>v*c.peakHP);
+  const modTQ=mtq.map(v=>v*c.peakTQ);
+  charts.dyno.data.datasets[0].data=stockHP;
+  charts.dyno.data.datasets[1].data=modHP;
+  charts.dyno.data.datasets[2].data=stockTQ;
+  charts.dyno.data.datasets[3].data=modTQ;
+  charts.dyno.options.scales.y.max=Math.ceil(Math.max(...modHP)/50)*50+30;
+  charts.dyno.options.scales.y1.max=Math.ceil(Math.max(...modTQ)/50)*50+30;
+  charts.dyno.update();
+
+  // RPM range gains
+  const ranges=[
+    {label:'Idle-2500',indices:[0,1,2,3]},
+    {label:'2500-4500',indices:[3,4,5,6,7]},
+    {label:'4500-6000',indices:[7,8,9,10]},
+    {label:'6000+ RPM',indices:[10,11,12,13]}
+  ];
+  const rpmBars=document.getElementById('rpmGainBars');
+  rpmBars.innerHTML='';
+  ranges.forEach(rng=>{
+    const gain=rng.indices.reduce((acc,i)=>{
+      return acc+((modHP[i]||0)-(stockHP[i]||0));
+    },0)/rng.indices.length;
+    const pct=Math.min(100,Math.max(0,gain/20*100));
+    const col=gain>6?'#00ff88':gain>2?'#ffd700':'rgba(0,212,255,.5)';
+    rpmBars.innerHTML+=`<div class="rpm-bar-row">
+      <div class="rpm-range-label">${rng.label}</div>
+      <div class="rpm-gain-bar-wrap">
+        <div class="rpm-gain-bar" style="width:${Math.max(pct,3)}%;background:${col}">
+          ${gain>0?'+'+gain.toFixed(1)+' HP':''}
+        </div>
+      </div></div>`;
+  });
+
+  // Summary
+  const peakModHP=Math.max(...modHP), peakModTQ=Math.max(...modTQ);
+  const gainHP=(peakModHP-c.peakHP).toFixed(0);
+  const gainTQ=(peakModTQ-c.peakTQ).toFixed(0);
+  document.getElementById('dynSummary').innerHTML=`
+    <div class="ds-item"><div class="ds-label">Stock HP</div><div class="ds-val">${c.peakHP} hp</div></div>
+    <div class="ds-item"><div class="ds-label">Modified HP</div><div class="ds-val">${peakModHP.toFixed(0)} hp <span class="ds-delta">+${gainHP}</span></div></div>
+    <div class="ds-item"><div class="ds-label">Stock TQ</div><div class="ds-val">${c.peakTQ} lb-ft</div></div>
+    <div class="ds-item"><div class="ds-label">Modified TQ</div><div class="ds-val">${peakModTQ.toFixed(0)} lb-ft <span class="ds-delta">+${gainTQ}</span></div></div>
+    <div class="ds-item" style="grid-column:span 2"><div class="ds-label">Active Mods</div><div class="ds-val">${activeMods.size} of ${ENGINE_MODS.length}</div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+//  HANDLING COMPUTATION
+// ═══════════════════════════════════════════════════════
+function computeHandling(){
+  const c=CARS[carId];
+  const base=mode==='autocross'?c.baseAX:c.baseTR;
+  const d={us:0,ti:0,mc:0,et:0,br:0,rc:0,sf:0};
+  const isFWD=c.layout==='fwd';
+  const isTrack=mode==='track';
+
+  // Spring rate effects (delta from stock in kg/mm)
+  const fsKg=suspState.fs/10, rsKg=suspState.rs/10;
+  const fsDelta=fsKg-c.stockSpring.f;
+  const rsDelta=rsKg-c.stockSpring.r;
+
+  d.br   += fsDelta*.25 + rsDelta*.25;
+  d.rc   -= fsDelta*.20 + rsDelta*.18;
+  d.ti   += fsDelta*.10;
+  if(isFWD){d.us -= fsDelta*.12; d.us += rsDelta*.15;}
+  else     {d.us -= fsDelta*.10; d.us += rsDelta*.12;}
+  d.et   += rsDelta*.05; // too stiff hurts slightly
+  if(isTrack){d.mc+=fsDelta*.08+rsDelta*.08;}
+
+  // Damping (normalize click to 0-1)
+  const {f:fMax}=getDampClicks();
+  const cdN=suspState.cd/Math.max(fMax,1);
+  const rdN=suspState.rd/Math.max(fMax,1);
+  d.br   += (cdN-.5)*1.2;
+  d.mc   += (rdN-.5)*.8;
+  d.et   += (rdN-.5)*.6;
+  d.rc   -= ((cdN-.5)+(rdN-.5))*.8;
+  d.ti   += (cdN-.5)*.5;
+
+  // ARB effects
+  const farbStock=c.swaybars.f.present?c.swaybars.f.dia:20;
+  const rarbStock=c.swaybars.r.present?c.swaybars.r.dia:16;
+  const farbDelta=suspState.farbOn?(suspState.farbDia-farbStock):-(farbStock*.8);
+  const rarbDelta=suspState.rarbOn?(suspState.rarbDia-rarbStock):-(rarbStock*.8);
+  const fAdj=suspState.farbAdj==='blade'?1.2:suspState.farbAdj==='3pos'?1.1:1.0;
+  const rAdj=suspState.rarbAdj==='blade'?1.2:suspState.rarbAdj==='3pos'?1.1:1.0;
+  const faEff=farbDelta*fAdj*.08, raEff=rarbDelta*rAdj*.08;
+
+  d.br   += (suspState.farbOn?farbDelta*.06:0)+(suspState.rarbOn?rarbDelta*.06:0);
+  d.rc   -= (suspState.farbOn?Math.abs(farbDelta)*.04:0)+(suspState.rarbOn?Math.abs(rarbDelta)*.04:0);
+  if(isFWD){d.us-=faEff; d.us+=raEff;}
+  else     {d.us-=faEff; d.us+=raEff*1.1;}
+  d.ti   -= faEff*.2;
+  d.mc   += (suspState.rarbOn?rarbDelta*.03:0);
+
+  // Camber (tenths of degree, negative = neg camber)
+  const fcDeg=suspState.fca/10; // 0 to -4
+  const rcDeg=suspState.rca/10;
+  const fcEff=Math.abs(fcDeg); const rcEff=Math.abs(rcDeg);
+  d.ti   += fcEff*.30;
+  d.mc   += rcEff*.25;
+  d.et   += rcEff*.15;
+  d.sf   += fcEff*.12;
+  d.rc   -= (fcEff+rcEff)*.08;
+
+  // Toe (front: +ve = toe-out for front)
+  const ftDeg=suspState.fte/3;  // normalize -1..1
+  const rtDeg=suspState.rte/3;
+  d.ti   += ftDeg*.35;
+  d.mc   += rtDeg*.25;
+  d.et   -= ftDeg*.05;
+  if(!isFWD)d.us-=ftDeg*.10;
+
+  // Apply
+  const result={};
+  const keys=['us','ti','mc','et','br','rc','sf'];
+  keys.forEach(k=>{ result[k]=Math.max(0,Math.min(10, base[k]+d[k])); });
+  return{base,mod:result};
+}
+
+// ═══════════════════════════════════════════════════════
+//  MAIN UPDATE
+// ═══════════════════════════════════════════════════════
+function updateAll(){
+  if(activeTab==='suspension') updateSuspensionCharts();
+  if(activeTab==='tire') updateTireCharts();
+  if(activeTab==='engine') updateDyno();
+}
+
+function updateSuspensionCharts(){
+  const {base,mod}=computeHandling();
+  const keys=['us','ti','mc','et','br','rc','sf'];
+  const baseArr=keys.map(k=>base[k]);
+  const modArr=keys.map(k=>mod[k]);
+  charts.radar.data.datasets[0].data=baseArr;
+  charts.radar.data.datasets[1].data=modArr;
+  charts.radar.update('active');
+  updateCompGrid(baseArr,modArr,keys);
+}
+
+function updateCompGrid(baseArr,modArr,keys){
+  const names=['Understeer Bal.','Turn-In','Mid-Corner','Exit Traction','Body Roll','Compliance','Steering Feel'];
+  const grid=document.getElementById('suspCmpGrid');
+  grid.innerHTML='';
+  keys.forEach((k,i)=>{
+    const b=baseArr[i],m=modArr[i],d=m-b;
+    const cls=Math.abs(d)<.05?'d-neu':d>0?'d-pos':'d-neg';
+    const barMCls=Math.abs(d)<.05?'':d>0?'up':'dn';
+    const sign=d>.05?'+':'';
+    grid.innerHTML+=`<div class="cmp-card">
+      <div class="cmp-name">${names[i]}</div>
+      <div class="bar-wrap">
+        <div class="bar-base" style="width:${b*10}%"></div>
+        <div class="bar-mod ${barMCls}" style="width:${m*10}%"></div>
+      </div>
+      <div class="cmp-val ${cls}">${m.toFixed(1)}/10 <span style="font-size:10px;font-weight:400">${sign}${d.toFixed(1)}</span></div>
+    </div>`;
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  AI CHAT
+// ═══════════════════════════════════════════════════════
+function toggleAI(){
+  document.getElementById('ai-panel').classList.toggle('open');
+}
+
+function sendAI(){
+  const inp=document.getElementById('aiInput');
+  const text=inp.value.trim();
+  if(!text)return;
+  addAIMsg(text,'user');
+  inp.value='';
+  setTimeout(()=>addAIMsg(analyzeDriverFeedback(text),'bot'),400);
+}
+
+function addAIMsg(text,role){
+  const hist=document.getElementById('aiHistory');
+  const div=document.createElement('div');
+  div.className='ai-msg ai-'+role;
+  div.innerHTML=text;
+  hist.appendChild(div);
+  hist.scrollTop=hist.scrollHeight;
+}
+
+function analyzeDriverFeedback(text){
+  const t=text.toLowerCase();
+  const c=CARS[carId];
+  const isFWD=c.layout==='fwd';
+  const isRWD=!isFWD;
+
+  // Pattern matching
+  const isUS=/(push|plow|washes|understeer|won't turn|front slide|tight\b|ran wide|pushing wide|too much push|front lets go|front end)/.test(t);
+  const isOS=/(loose|snap|spins|oversteer|rear steps|tail out|tail happy|rotation|rotating too|rear slides|back end|scary|overrotate)/.test(t);
+  const isHarsh=/(bump|rough|harsh|stiff|jarring|skip|loses grip over bump|chassis hop|jolt)/.test(t);
+  const isRoll=/(roll|lean|wallow|body motion|floaty|tippy)/.test(t);
+  const isVague=/(vague|numb|no feel|disconnected|floaty steering|dead steering)/.test(t);
+  const isTraction=/(wheelspin|spinning\b|can't put|traction|spin out|power on exit)/.test(t);
+  const isWet=/(wet|rain|aquaplan|slippery|greasy)/.test(t);
+  const isHighSpeed=/(darty|nervous|unstable at speed|high speed|lane change|highway)/.test(t);
+  const isEntryOS=/(entry|turn-in snap|initial|braking oversteer)/.test(t)&&isOS;
+  const isExitUS=/(exit|mid corner|apex push|late apex)/.test(t)&&isUS;
+
+  let diag='',cause='',recs=[],expect='',warn='';
+
+  if(isWet){
+    return`🌧 <strong>Wet Conditions</strong><br><br>
+<strong>🔍 Diagnosis:</strong> Reduced grip in wet conditions — compound choice is most critical.<br><br>
+<strong>🔧 Recommendations:</strong><br>
+• Switch to <em>Wheel & Tire tab</em> → select Continental ECS02 or Michelin PS4S (best wet summer UHP)<br>
+• Enable <em>Wet Mode toggle</em> to see wet performance profiles<br>
+• Lower tire pressure 2-3 PSI to increase contact patch<br>
+• Avoid 200TW tires in rain — they have poor wet performance<br><br>
+<strong>💡 Expected Result:</strong> All-season or summer UHP tires with proper sizing outperform 200TW significantly in wet.<br><br>
+<strong>⚠ Watch out for:</strong> Even summer UHP tires have limits in heavy rain. Smooth inputs are more important than setup.`;
+  }
+
+  if(isHighSpeed){
+    return`🏁 <strong>High-Speed Instability</strong><br><br>
+<strong>🔍 Diagnosis:</strong> The car feels nervous or unstable at speed — likely insufficient rear stability.<br><br>
+<strong>🚗 Primary Cause (${c.name}):</strong> ${isFWD?'FWD cars can feel darty at speed with too much front toe-out':'RWD: rear toe may be neutral or out, or rear spring too soft'}.<br><br>
+<strong>🔧 Recommendations:</strong><br>
+• Set rear toe to <em>1/16" to 1/8" toe-in</em> (Alignment section)<br>
+• Reduce front toe-out (go toward neutral for track work)<br>
+• Increase rebound damping (helps settle the chassis)<br>
+${isRWD?'• Soften front ARB slightly — reduces twitchiness\n':''}
+• Increase rear spring rate slightly<br><br>
+<strong>💡 Expected Result:</strong> Significantly more composed under high-speed direction changes.<br><br>
+<strong>⚠ Watch out for:</strong> More rear toe-in reduces rotation in tight corners.`;
+  }
+
+  if(isHarsh){
+    diag='Excessive harshness — shock or spring setup too firm for the surface.';
+    cause=`On ${c.name}: ${document.getElementById('suspSetup').value!=='stock'?'Your current suspension setup may be set too high in click count.':'Stock suspension with rough course = compliance mismatch.'}`;
+    recs=[
+      'Reduce <em>Compression Damping</em> 3-5 clicks toward soft',
+      'Reduce <em>Rebound Damping</em> 2-3 clicks — let the suspension breathe over bumps',
+      isFWD?'Consider reducing Front Spring Rate — FWD cars need compliance at front for grip':'Consider reducing spring rates if using high-rate aftermarket springs',
+      'Check tire pressure — overinflation amplifies harshness significantly'
+    ];
+    expect='Better mechanical grip on bumpy surfaces, more consistent cornering even when the course isn\'t smooth.';
+    warn='Softer damping increases body motion — find the balance where the car is controlled but not harsh.';
+  } else if(isRoll){
+    diag='Excessive body roll — ARB stiffness or spring rates are insufficient.';
+    cause=`${c.name} with ${suspState.farbOn?'active':'no'} front ARB and ${suspState.rarbOn?'active':'no'} rear ARB.`;
+    recs=[
+      'Increase <em>Front Sway Bar</em> diameter (or switch to adjustable bar, set to stiff position)',
+      'Increase <em>Rear Sway Bar</em> diameter',
+      'Increase both spring rates — body roll is spring-rate limited',
+      'Increase Compression Damping to resist initial roll'
+    ];
+    expect='Flatter cornering, more predictable load transfer, better consistency.';
+    warn='Too-stiff ARBs cause understeer (front ARB) or oversteer (rear ARB). Tune spring rates first.';
+  } else if(isExitUS){
+    diag=`Exit understeer — ${isFWD?'FWD torque steering through the corner':'front tire grip limited on corner exit, likely too much front ARB or wrong alignment'}.`;
+    cause=isFWD?'FWD inherent: front tires doing both steering and power — overwhelmed on exit.':'Front bias in setup prevents clean rotation on exit.';
+    recs= isFWD
+      ?['Add more <em>Front Negative Camber</em> (-2.5° to -3.0°)',
+        'Increase <em>Rear Sway Bar</em> stiffness to promote rear rotation',
+        'Reduce front sway bar stiffness slightly',
+        'Check front toe — slight toe-out sharpens exit response']
+      :['Soften <em>Front Sway Bar</em> — reduces front load bias',
+        'Stiffen <em>Rear Sway Bar</em> slightly — helps rotation through corner',
+        'Add more <em>Front Negative Camber</em>',
+        'Soften front spring rate slightly'];
+    expect='More rotation available — car pivots more freely on exit.';
+    warn=isFWD?'More rear ARB stiffness means less stability in fast sweepers.':'Too much rear ARB causes snap oversteer.';
+  } else if(isUS){
+    diag=`Understeer — front tires reaching grip limit before rear.`;
+    cause=isFWD
+      ?`Classic FWD issue on ${c.name}. Engine weight over front axle limits front grip ceiling.`
+      :`${c.name} running too much front grip bias. Front ARB or spring rates may be too stiff.`;
+    recs= isFWD
+      ?['Increase <em>Rear Sway Bar</em> stiffness (biggest impact for FWD)',
+        'Add <em>Front Negative Camber</em> (-2.5° or more)',
+        'Set <em>Front Toe</em> to 1/16" toe-out',
+        'Check tire compound — 200TW or summer tire makes huge difference',
+        'Try slightly wider front tire width']
+      :['Soften <em>Front Sway Bar</em> — most direct fix for RWD understeer',
+        'Stiffen <em>Rear Sway Bar</em> slightly',
+        'Add more <em>Front Negative Camber</em>',
+        'Reduce front spring rate slightly'];
+    expect='Car rotates more willingly into corners, front follows steering input.';
+    warn=isFWD?'Too much rear ARB causes snap oversteer in fast corners.':'Balance changes — monitor for rear instability.';
+  } else if(isOS){
+    diag=`Oversteer — ${isEntryOS?'entry/turn-in snap':'rear stepping out mid-corner or exit'}.`;
+    cause=isRWD
+      ?`${c.name} RWD: ${isEntryOS?'weight transfer under braking unloads rear — trail braking too aggressive or rear ARB too stiff':'rear ARB too stiff or spring rate imbalance'}.`
+      :`FWD car rotating too much — unusual. Check rear ARB setting.`;
+    recs= isRWD
+      ?isEntryOS
+        ?['Stiffen <em>Front Sway Bar</em> — reduces front load transfer on entry',
+          'Soften <em>Rear Sway Bar</em>',
+          'Increase rear spring rate slightly',
+          'Add rear toe-in (1/16") for entry stability']
+        :['Soften <em>Rear Sway Bar</em>',
+          'Stiffen <em>Front Sway Bar</em>',
+          'Increase <em>Rear Spring Rate</em> slightly',
+          'Check rear camber — too much negative can cause instability at limit']
+      :['Reduce <em>Rear Sway Bar</em> stiffness',
+        'Increase rear spring rate',
+        'Set rear toe to 1/8" toe-in'];
+    expect='More stable and predictable — car holds line through corners without snapping.';
+    warn=isRWD?'Don\'t over-correct — some rotation is desirable for fast lap times.':'FWD cars rarely true oversteer — check for snap under braking.';
+  } else if(isVague){
+    diag='Vague or numb steering feel — reduced feedback through wheel.';
+    cause=`Could be tire compound, alignment, or damping.`;
+    recs=['Upgrade to a <em>200TW or Summer UHP</em> compound — transforms steering feel',
+      'Add <em>Front Negative Camber</em> (-2.0° minimum)',
+      'Set front toe to <em>1/16" toe-out</em>',
+      'Increase Compression Damping 2-3 clicks'];
+    expect='More direct, communicative steering — clearer signal of when front approaches limit.';
+    warn='Too much toe-out causes tire scrub and wear. Keep under 1/8" total.';
+  } else if(isTraction){
+    diag=`Traction limited — ${isFWD?'front wheels spinning while steering':'rear stepping out under power'}.`;
+    cause=isFWD
+      ?`FWD cars combine steering and drive at front — ${c.name} especially sensitive under power.`
+      :`${c.name} power exceeds rear tire grip on exit.`;
+    recs= isFWD
+      ?['Add more <em>Front Negative Camber</em>',
+        'Slightly wider front tire if within class rules',
+        'Smoother throttle application — trail the brake longer into corner',
+        'Lower front tire pressure 1-2 PSI']
+      :['Wider rear tire option (check class rules)',
+        'More <em>Rear Negative Camber</em> (-1.5° to -2.0°)',
+        'Lower rear spring rate slightly',
+        'Soften Rebound Damping — allows tire to plant faster on exit'];
+    expect=isFWD?'Better power transfer through front tires, less torque steer.':'More controllable power application out of slow corners.';
+    warn=isFWD?'A limited-slip differential is the ultimate fix — check SCCA class rules.':'Wider rear tires reduce rotation — recalibrate ARB balance.';
+  } else {
+    return`🤔 <strong>Tell me more about what you're feeling.</strong><br><br>
+Try describing:<br>
+• <em>Where in the corner</em> (entry, mid, exit)<br>
+• <em>What the car does</em> (pushes, slides, snaps, bounces, rolls)<br>
+• <em>Which end</em> feels loose or tight<br><br>
+Example: <em>"The front pushes wide at corner exit"</em> or <em>"The rear snaps out on turn-in"</em>`;
+  }
+
+  return`<strong>🔍 Diagnosis:</strong> ${diag}<br><br>
+<strong>🚗 Primary Cause (${c.short}):</strong> ${cause}<br><br>
+<strong>🔧 Recommended Adjustments:</strong><br>
+${recs.map(r=>`• ${r}`).join('<br>')}<br><br>
+<strong>💡 Expected Result:</strong> ${expect}<br><br>
+<strong>⚠ Watch out for:</strong> ${warn}`;
+}
+
+// ═══════════════════════════════════════════════════════
+//  STARTUP
+// ═══════════════════════════════════════════════════════
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
